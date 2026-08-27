@@ -73,7 +73,8 @@ namespace AIForGames
         }
     }
 
-    void NodeMap::Draw() {
+    void NodeMap::Draw(bool shouldDraw) {
+        if (!shouldDraw) return;
         // red colour for blocks
         Color cellColor;
         cellColor.a = 255;
@@ -131,6 +132,70 @@ namespace AIForGames
 
 		return GetNode(i, j);
 	}
+
+	// ------------- PathAgent -------------
+	PathAgent::PathAgent() : m_position(0.0f, 0.0f), m_currentIndex(0), m_currentNode(nullptr), m_speed(100.0f) {}
+
+    void PathAgent::Update(float deltaTime) {
+        if (m_path.empty()) return;
+
+        // calculate remaining distance before moving
+        float currentDistance = glm::distance(m_position, m_path[m_currentIndex]->position);
+        float stepDistance = m_speed * deltaTime;
+
+        // will we reach/overshoot the node this frame?
+        if (currentDistance - stepDistance > 0.0001f) {
+            // safe to normalize because currentDistance > 0.0001f
+            glm::vec2 unitVectorToNextNode = (m_path[m_currentIndex]->position - m_position) / currentDistance;
+            m_position += unitVectorToNextNode * stepDistance;
+        }
+        else {
+			// otherwise we have overshot the current target node
+            m_currentIndex++;
+
+            if (m_currentIndex >= m_path.size()) {
+				// reached the end of the path, so snap to the last node and clear the path
+                m_position = m_path.back()->position;
+				m_currentNode = m_path.back();
+                m_path.clear();
+			}
+            else {
+				// invert the overshoot distance to get a positive overshoot distance
+				float overshoot = stepDistance - currentDistance;
+
+                // start from the node we just reached
+				glm::vec2 previousNodePos = m_path[m_currentIndex - 1]->position;
+				glm::vec2 nextNodePos = m_path[m_currentIndex]->position;
+
+                // direction vector for new segment
+				glm::vec2 newSegmentDirection = glm::normalize(nextNodePos - previousNodePos);
+
+				// move from previous node along the new segment direction by the overshoot distance
+                m_position = previousNodePos + (newSegmentDirection * overshoot);
+            }
+        }
+    }
+
+    void PathAgent::GoToNode(Node* node) {
+		if (node == nullptr) return; // validate the target node
+		m_path = DijkstrasSearch(m_currentNode, node);
+        m_currentIndex = 0; // set index to 0 if path excludes current node, or 1 if path includes current node
+    }
+
+    void PathAgent::Draw() {
+        DrawCircle((int)m_position.x, (int)m_position.y, 8, { 255,255,0,255 });
+    }
+
+    void PathAgent::SetNode(Node* node) {
+        m_currentNode = node;
+        if (node != nullptr) {
+            m_position = node->position;
+		}
+    }
+
+    void PathAgent::SetSpeed(float speed) { m_speed = speed; }
+
+    void PathAgent::GetPath(std::vector<Node*>& path) { path = m_path; }
 
     // ------------- Dijkstra's Search Algorithm -------------
     std::vector<Node*> DijkstrasSearch(Node* startNode, Node* endNode) {

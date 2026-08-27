@@ -52,27 +52,45 @@ int main(int argc, char* argv[])
 	std::vector<Node*> path = DijkstrasSearch(start, end);
 	Color lineColor = { 0, 255, 0, 255 }; // bright green
 
+	PathAgent agent;
+	agent.SetNode(start);
+	agent.SetSpeed(300.0f);
+
     InitWindow(screenWidth, screenHeight, "Dijkstra's Algorithm");
 
     SetTargetFPS(60);
 
+	float time = (float)GetTime();
+	float deltaTime = 0.0f;
+
     // Main game loop
     while (!WindowShouldClose())
     {
+		float fTime = (float)GetTime();
+		deltaTime = fTime - time;
+		time = fTime;
+
+        // click on node map to set a new target node and recalculate the path
+        if (IsMouseButtonPressed(0)) {
+            Vector2 mousePos = GetMousePosition();
+            Node* pathEnd = nodeMap.GetClosestNode(glm::vec2(mousePos.x, mousePos.y));
+            if (pathEnd != nullptr) {
+                agent.GoToNode(pathEnd);
+            }
+        }
+
+        agent.Update(deltaTime); // update the agent's position along the path
+
         BeginDrawing();
 
 		ClearBackground(BLACK); // black background
 
-		// click on node map to set a new target node and recalculate the path
-        if (IsMouseButtonPressed(0)) {
-			Vector2 mousePos = GetMousePosition();
-			end = nodeMap.GetClosestNode(glm::vec2(mousePos.x, mousePos.y));
-			if (end == nullptr) end = nodeMap.GetNode(10, 2); // if no node found, use the default end node
-			path = DijkstrasSearch(start, end);
-        }
-
-		nodeMap.Draw(); // draw the node map
+        nodeMap.Draw(true); // draw the node map
+		std::vector<Node*> path;
+		agent.GetPath(path);
 		nodeMap.DrawPath(path, lineColor); // draw the path
+
+		agent.Draw(); // draw the agent
 
         EndDrawing();
     }

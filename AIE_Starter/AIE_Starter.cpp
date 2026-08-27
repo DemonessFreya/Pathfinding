@@ -67,6 +67,7 @@ int main(int argc, char* argv[])
         if (IsMouseButtonPressed(0)) {
 			Vector2 mousePos = GetMousePosition();
 			start = nodeMap.GetClosestNode(glm::vec2(mousePos.x, mousePos.y));
+			if (start == nullptr) start = nodeMap.GetNode(1, 1); // if no node found, use the default start node
 			path = DijkstrasSearch(start, end);
         }
 

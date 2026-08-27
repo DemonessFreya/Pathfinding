@@ -35,6 +35,7 @@ int main(int argc, char* argv[])
     int screenWidth = 800;
     int screenHeight = 450;
 
+	NodeMap nodeMap;
     std::vector<std::string> asciiMap;
     asciiMap.push_back("000000000000");
     asciiMap.push_back("010111011100");
@@ -44,23 +45,26 @@ int main(int argc, char* argv[])
     asciiMap.push_back("010000001000");
     asciiMap.push_back("011111111110");
     asciiMap.push_back("000000000000");
+    nodeMap.Initialise(asciiMap, 32);
+
+	Node* start = nodeMap.GetNode(1, 1);
+	Node* end = nodeMap.GetNode(10, 2);
+	std::vector<Node*> path = DijkstrasSearch(start, end);
+	Color lineColor = { 0, 255, 0, 255 }; // bright green
 
     InitWindow(screenWidth, screenHeight, "Dijkstra's Algorithm");
 
     SetTargetFPS(60);
-
-    NodeMap nodeMap;
-    nodeMap.Initialise(asciiMap, 50);
-
 
     // Main game loop
     while (!WindowShouldClose())
     {
         BeginDrawing();
 
-        ClearBackground(RAYWHITE);
+		ClearBackground(BLACK); // black background
 
         nodeMap.Draw();
+		nodeMap.DrawPath(path, lineColor);
 
         EndDrawing();
     }

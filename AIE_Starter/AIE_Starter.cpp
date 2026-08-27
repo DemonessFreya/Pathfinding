@@ -45,15 +45,12 @@ int main(int argc, char* argv[])
     asciiMap.push_back("011111111110");
     asciiMap.push_back("000000000000");
 
-    InitWindow(screenWidth, screenHeight, "raylib [core] example - basic window");
+    InitWindow(screenWidth, screenHeight, "Dijkstra's Algorithm");
 
     SetTargetFPS(60);
 
-
-    Node* a = new Node();
-    a->position = glm::vec2(125.0f, 75.0f);
-    Node* b = new Node();
-    b->position = glm::vec2(250.0f, 75.0f);
+    NodeMap nodeMap;
+    nodeMap.Initialise(asciiMap, 50);
 
 
     // Main game loop
@@ -63,7 +60,7 @@ int main(int argc, char* argv[])
 
         ClearBackground(RAYWHITE);
 
-        DrawText("Congrats! You created your first window!", 190, 200, 20, LIGHTGRAY);
+        nodeMap.Draw();
 
         EndDrawing();
     }

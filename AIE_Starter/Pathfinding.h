@@ -6,28 +6,39 @@
 
 namespace AIForGames
 {
-    struct Node;
+	struct Node;
 
-    struct Edge {
-        Node* target;
-        float cost;
-    };
+	struct Edge {
+		Edge();
+		Edge(Node* _target, float _cost);
 
-    struct Node {
-        glm::vec2 position;
-        std::vector<Edge> connections;
-    };
+		Node* target;
+		float cost;
+	};
 
-    class NodeMap
-    {
-        int m_width, m_height;
-        float m_cellSize;
+	struct Node {
+		Node();
+		Node(float x, float y);
 
-        Node** m_cellSize;
-    public:
-        void Init(std::vector<std::string> asciiMap, int cellSize) {
-            m_cellSize = cellSize;
-            const char emptySquare = '0';
-        }
-    };
+		glm::vec2 position;
+		std::vector<Edge> connections;
+
+		void ConnectTo(Node* other, float cost);
+	};
+
+	class NodeMap
+	{
+		int m_width = 0;
+		int m_height = 0;
+		float m_cellSize = 0.0f;
+
+		Node** m_nodes = nullptr;
+
+	public:
+		~NodeMap();
+
+		void Initialise(std::vector<std::string> asciiMap, int cellSize);
+		void Draw();
+		Node* GetNode(int x, int y);
+	};
 }

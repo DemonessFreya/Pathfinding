@@ -45,6 +45,7 @@ namespace AIForGames
 		void Draw();
 		void DrawPath(std::vector<Node*> path, Color lineColor);
 		Node* GetNode(int x, int y);
+		Node* GetClosestNode(glm::vec2 worldPos);
 	};
 
 	std::vector<Node*> DijkstrasSearch(Node* startNode, Node* endNode);

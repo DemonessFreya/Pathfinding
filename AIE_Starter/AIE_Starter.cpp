@@ -45,7 +45,7 @@ int main(int argc, char* argv[])
     asciiMap.push_back("010000001000");
     asciiMap.push_back("011111111110");
     asciiMap.push_back("000000000000");
-    nodeMap.Initialise(asciiMap, 32);
+    nodeMap.Initialise(asciiMap, 50);
 
 	Node* start = nodeMap.GetNode(1, 1);
 	Node* end = nodeMap.GetNode(10, 2);
@@ -63,8 +63,15 @@ int main(int argc, char* argv[])
 
 		ClearBackground(BLACK); // black background
 
-        nodeMap.Draw();
-		nodeMap.DrawPath(path, lineColor);
+		// click on node map to set a new target node and recalculate the path
+        if (IsMouseButtonPressed(0)) {
+			Vector2 mousePos = GetMousePosition();
+			start = nodeMap.GetClosestNode(glm::vec2(mousePos.x, mousePos.y));
+			path = DijkstrasSearch(start, end);
+        }
+
+		nodeMap.Draw(); // draw the node map
+		nodeMap.DrawPath(path, lineColor); // draw the path
 
         EndDrawing();
     }

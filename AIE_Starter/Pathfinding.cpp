@@ -116,7 +116,18 @@ namespace AIForGames
         return m_nodes[x + m_width * y];
     }
 
-    // Dijkstra's Search Algorithm
+    Node* NodeMap::GetClosestNode(glm::vec2 worldPos) {
+        // find the closest node to the given world position
+		int i = (int)(worldPos.x / m_cellSize);
+		if (i < 0 || i >= m_width) return nullptr;
+
+		int j = (int)(worldPos.y / m_cellSize);
+		if (j < 0 || j >= m_height) return nullptr;
+
+		return GetNode(i, j);
+	}
+
+    // ------------- Dijkstra's Search Algorithm -------------
     std::vector<Node*> DijkstrasSearch(Node* startNode, Node* endNode) {
         // validate start and end nodes
         if (startNode == nullptr || endNode == nullptr) return {};

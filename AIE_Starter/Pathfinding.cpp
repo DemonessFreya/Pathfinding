@@ -12,8 +12,8 @@ namespace AIForGames
 	Edge::Edge(Node* _target, float _cost) : target(_target), cost(_cost) {}
 
 	// ------------- Node -------------
-	Node::Node() : position(0.0f, 0.0f) {}
-	Node::Node(float x, float y) : position(x, y) {}
+	Node::Node() : position(0.0f, 0.0f), gScore(0.0f), previous(nullptr) {}
+	Node::Node(float x, float y) : position(x, y), gScore(0.0f), previous(nullptr) {}
 
 	void Node::ConnectTo(Node* other, float cost) {
 		connections.push_back(Edge(other, cost));
@@ -63,11 +63,11 @@ namespace AIForGames
                     }
 
                     // see if there's a node south of us, checking for array index overruns again
-                    Node* nodeSouth = y == 0 ? nullptr : GetNode(x, y - 1);
+					Node* nodeSouth = y == m_height - 1 ? nullptr : GetNode(x, y + 1);
                     if (nodeSouth) {
-                        node->ConnectTo(nodeSouth, 1);
+                        node->ConnectTo(nodeSouth, 1); // TODO: weights
                         nodeSouth->ConnectTo(node, 1);
-                    }
+					}
                 }
             }
         }
@@ -104,6 +104,8 @@ namespace AIForGames
     }
 
     void NodeMap::DrawPath(std::vector<Node*> path, Color lineColor) {
+		if (path.size() < 2) return; // if the path is empty or only has one node, there's nothing to draw
+
 		// draw a line between each node in the path
         for (int i = 0; i < path.size() - 1; i++) {
             Node* node = path[i];
@@ -113,6 +115,9 @@ namespace AIForGames
 	}
 
     Node* NodeMap::GetNode(int x, int y) {
+		if (x < 0 || x >= m_width) return nullptr;
+		if (y < 0 || y >= m_height) return nullptr;
+
         return m_nodes[x + m_width * y];
     }
 
@@ -129,11 +134,8 @@ namespace AIForGames
 
     // ------------- Dijkstra's Search Algorithm -------------
     std::vector<Node*> DijkstrasSearch(Node* startNode, Node* endNode) {
-        // validate start and end nodes
-        if (startNode == nullptr || endNode == nullptr) return {};
-
-        // if start and end node are the same, return empty path
-        if (startNode == endNode) return {};
+        if (startNode == nullptr || endNode == nullptr) return {}; // validate start and end nodes
+        if (startNode == endNode) return { startNode }; // if start and end node are the same, return start node as the only node in the path
 
         // initialise starting node
 		startNode->gScore = 0.0f;
@@ -163,14 +165,15 @@ namespace AIForGames
 			closedList.push_back(currentNode);
 
 			// iterate through the current node's connections
-            for (auto c : currentNode->connections) {
+            for (auto& c : currentNode->connections) {
 				// if c.target not in closed list
                 if (std::find(closedList.begin(), closedList.end(), c.target) == closedList.end()) {
-                    int gScore = currentNode->gScore + c.cost;
+                    float gScore = currentNode->gScore + c.cost;
 
 					// have not visited node yet, so calculate g-score and update its parent.
 					// also add it to the open list for processing.
-                    if (std::find(openList.begin(), openList.end(), c.target) == openList.end()) {
+					auto iter = std::find(openList.begin(), openList.end(), c.target);
+                    if (iter == openList.end()) {
                         c.target->gScore = gScore;
                         c.target->previous = currentNode;
                         openList.push_back(c.target);
@@ -189,14 +192,17 @@ namespace AIForGames
 
 		// create path in reverse from endNode to startNode
 		std::vector<Node*> path;
-		Node* currentNode = endNode;
 
-        while (currentNode != nullptr) {
-			path.push_back(currentNode);
-			currentNode = currentNode->previous;
-        }
+        if (endNode->previous != nullptr || endNode == startNode) {
+			Node* currentNode = endNode;
+            while (currentNode != nullptr) {
+                path.push_back(currentNode);
+                currentNode = currentNode->previous;
+			}
+			std::reverse(path.begin(), path.end()); // reverse the path to be from startNode to endNode
+		}
 
-        // return the path for navigation between start and end nodes
+		// return the path to finish Dijkstra's search
 		return path;
     }
 }

@@ -32,8 +32,8 @@ using namespace AIForGames;
 
 int main(int argc, char* argv[])
 {
-    int screenWidth = 800;
-    int screenHeight = 450;
+    int screenWidth = 600;
+    int screenHeight = 400;
 
 	NodeMap nodeMap;
     std::vector<std::string> asciiMap;
@@ -66,8 +66,8 @@ int main(int argc, char* argv[])
 		// click on node map to set a new target node and recalculate the path
         if (IsMouseButtonPressed(0)) {
 			Vector2 mousePos = GetMousePosition();
-			start = nodeMap.GetClosestNode(glm::vec2(mousePos.x, mousePos.y));
-			if (start == nullptr) start = nodeMap.GetNode(1, 1); // if no node found, use the default start node
+			end = nodeMap.GetClosestNode(glm::vec2(mousePos.x, mousePos.y));
+			if (end == nullptr) end = nodeMap.GetNode(10, 2); // if no node found, use the default end node
 			path = DijkstrasSearch(start, end);
         }
 

@@ -4,10 +4,13 @@
 #include <vector>
 #include <string>
 #include "raylib.h"
+#include "poly2tri/poly2tri.h"
 
 namespace AIForGames
 {
 	struct Node;
+
+	std::vector<Node*> DijkstrasSearch(Node* startNode, Node* endNode);
 
 	struct Edge {
 		Edge();
@@ -68,5 +71,50 @@ namespace AIForGames
 		void GetPath(std::vector<Node*>& path);
 	};
 
-	std::vector<Node*> DijkstrasSearch(Node* startNode, Node* endNode);
+	class NavMesh
+	{
+	public:
+		// create base walkable area
+		NavMesh(float width, float height);
+		~NavMesh();
+
+		// triangylar navigation node
+		class NavMeshNode : public Node {
+		public:
+			NavMeshNode() {}
+			virtual ~NavMeshNode() {}
+
+			int getAdjacentVertices(NavMeshNode* other, glm::vec2* adjacent);
+
+			// the vertices of the triangle surrounding this node
+			std::vector<glm::vec2> vertices;
+		};
+
+		struct Obstacle {
+			float x, y, w, h, padding;
+		};
+
+		// returns true if the obstacle was added safely (does not overlap)
+		bool addObstacle(float x, float y, float w, float h, float padding);
+
+		void addObstacles(int num, int width, int height);
+
+		void build();
+
+		void Draw();
+
+		std::vector<NavMeshNode*>& getNodes() { return m_nodes; }
+		std::vector<Obstacle>& getObstacles() { return m_obstacles; }
+
+	protected:
+		std::vector<Obstacle> m_obstacles;
+		std::vector<NavMeshNode*> m_nodes;
+
+		// this is used for building the mesh
+		// uses Poly2Tri
+		p2t::CDT* m_cdt;
+		std::vector<std::vector<p2t::Point*>> m_polygons;
+
+		glm::vec2 extents;
+	};
 }

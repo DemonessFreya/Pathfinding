@@ -32,8 +32,11 @@ using namespace AIForGames;
 
 int main(int argc, char* argv[])
 {
-    int screenWidth = 600;
-    int screenHeight = 400;
+    int screenWidth = 1280;
+    int screenHeight = 720;
+
+    InitWindow(screenWidth, screenHeight, "Dijkstra's Algorithm");
+    SetTargetFPS(60);
 
 	NodeMap nodeMap;
     std::vector<std::string> asciiMap;
@@ -45,7 +48,7 @@ int main(int argc, char* argv[])
     asciiMap.push_back("010000001000");
     asciiMap.push_back("011111111110");
     asciiMap.push_back("000000000000");
-    nodeMap.Initialise(asciiMap, 50);
+    nodeMap.Initialise(asciiMap, 32);
 
 	Node* start = nodeMap.GetNode(1, 1);
 	Node* end = nodeMap.GetNode(10, 2);
@@ -56,9 +59,10 @@ int main(int argc, char* argv[])
 	agent.SetNode(start);
 	agent.SetSpeed(300.0f);
 
-    InitWindow(screenWidth, screenHeight, "Dijkstra's Algorithm");
-
-    SetTargetFPS(60);
+    NavMesh navigation(screenWidth, screenHeight);
+    srand(42);
+    navigation.addObstacles(12, 60, 60);
+    navigation.build();
 
 	float time = (float)GetTime();
 	float deltaTime = 0.0f;
@@ -71,7 +75,7 @@ int main(int argc, char* argv[])
 		time = fTime;
 
         // click on node map to set a new target node and recalculate the path
-        if (IsMouseButtonPressed(0)) {
+        /*if (IsMouseButtonPressed(0)) {
             Vector2 mousePos = GetMousePosition();
             Node* pathEnd = nodeMap.GetClosestNode(glm::vec2(mousePos.x, mousePos.y));
             if (pathEnd != nullptr) {
@@ -79,18 +83,19 @@ int main(int argc, char* argv[])
             }
         }
 
-        agent.Update(deltaTime); // update the agent's position along the path
+        agent.Update(deltaTime);*/ // update the agent's position along the path
 
         BeginDrawing();
-
 		ClearBackground(BLACK); // black background
 
-        nodeMap.Draw(true); // draw the node map
+        navigation.Draw();
+
+        /*nodeMap.Draw(true); // draw the node map
 		std::vector<Node*> path;
 		agent.GetPath(path);
 		nodeMap.DrawPath(path, lineColor); // draw the path
 
-		agent.Draw(); // draw the agent
+		agent.Draw();*/ // draw the agent
 
         EndDrawing();
     }

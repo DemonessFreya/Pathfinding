@@ -10,7 +10,7 @@ namespace AIForGames
 {
 	struct Node;
 
-	std::vector<Node*> DijkstrasSearch(Node* startNode, Node* endNode);
+	std::vector<Node*> AStarSearch(Node* startNode, Node* endNode);
 
 	struct Edge {
 		Edge();
@@ -28,6 +28,8 @@ namespace AIForGames
 		std::vector<Edge> connections;
 
 		float gScore;
+		float hScore;
+		float fScore;
 		Node* previous;
 
 		void ConnectTo(Node* other, float cost);
@@ -69,6 +71,54 @@ namespace AIForGames
 		void SetNode(Node* node);
 		void SetSpeed(float speed);
 		void GetPath(std::vector<Node*>& path);
+	};
+
+	/*class Agent {
+	public:
+		Agent() {}
+		Agent(INavigatable* _nodeMap, Behaviour* _behaviour) : m_current(_behaviour), m_nodeMap(_nodeMap), m_color({ 255, 255, 0, 255 }) { m_pathAgent.SetSpeed(32); }
+		~Agent() { delete m_current; }
+
+		void Update(float deltaTime);
+		void Draw();
+
+		void GoTo(Node* node);
+		void GoTo(glm::vec2 point);
+		void SetNode(Node* node);
+
+		bool PathComplete();
+
+		std::vector<Node*>& GetPath() { return m_pathAgent; }
+		void SetSpeed(float speed) { m_pathAgent.SetSpeed(speed); }
+
+		INavigatable* GetNodeMap() { return m_nodeMap; }
+
+		Agent* GetTarget() { return m_target; }
+		void SetTarget(Agent* target) { m_target = target; }
+
+		glm::vec2 GetPosition() { return m_pathAgent.GetPosition(); }
+
+		void Reset() { m_pathAgent.GetPath().clear(); }
+
+		void SetColor(Color c) { m_color = c; }
+
+	private:
+		PathAgent m_pathAgent;
+		Behaviour* m_current;
+		INavigatable* m_nodeMap;
+		Color m_color;
+
+		Agent* m_target;
+	};*/
+
+	// interface type class for NavMesh and NodeMap, so we can give our agent's either of them
+	class INavigatable {
+	public:
+		virtual void Draw() = 0;
+		virtual Node* GetClosestNode(glm::vec2 worldPos) = 0;
+		// default value used to determine if we've "moved significantly" when tracking a moving target
+		virtual float GetCellSize() { return 32; }
+		virtual Node* GetRandomNode() = 0;
 	};
 
 	class NavMesh

@@ -43,7 +43,7 @@ int main(int argc, char* argv[])
     asciiMap.push_back("000000000000");
     asciiMap.push_back("010111011100");
     asciiMap.push_back("010101110110");
-    asciiMap.push_back("010100000000");
+    asciiMap.push_back("010100000010");
     asciiMap.push_back("010111111110");
     asciiMap.push_back("010000001000");
     asciiMap.push_back("011111111110");
@@ -52,7 +52,7 @@ int main(int argc, char* argv[])
 
 	Node* start = nodeMap.GetNode(1, 1);
 	Node* end = nodeMap.GetNode(10, 2);
-	std::vector<Node*> path = DijkstrasSearch(start, end);
+	std::vector<Node*> path = AStarSearch(start, end);
 	Color lineColor = { 0, 255, 0, 255 }; // bright green
 
 	PathAgent agent;
@@ -75,7 +75,7 @@ int main(int argc, char* argv[])
 		time = fTime;
 
         // click on node map to set a new target node and recalculate the path
-        /*if (IsMouseButtonPressed(0)) {
+        if (IsMouseButtonPressed(0)) {
             Vector2 mousePos = GetMousePosition();
             Node* pathEnd = nodeMap.GetClosestNode(glm::vec2(mousePos.x, mousePos.y));
             if (pathEnd != nullptr) {
@@ -83,19 +83,19 @@ int main(int argc, char* argv[])
             }
         }
 
-        agent.Update(deltaTime);*/ // update the agent's position along the path
+        agent.Update(deltaTime); // update the agent's position along the path
 
         BeginDrawing();
 		ClearBackground(BLACK); // black background
 
-        navigation.Draw();
+        //navigation.Draw();
 
-        /*nodeMap.Draw(true); // draw the node map
+        nodeMap.Draw(true); // draw the node map
 		std::vector<Node*> path;
 		agent.GetPath(path);
 		nodeMap.DrawPath(path, lineColor); // draw the path
 
-		agent.Draw();*/ // draw the agent
+		agent.Draw(); // draw the agent
 
         EndDrawing();
     }

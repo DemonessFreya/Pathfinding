@@ -12,8 +12,8 @@ namespace AIForGames
 	Edge::Edge(Node* _target, float _cost) : target(_target), cost(_cost) {}
 
 	// ------------- Node -------------
-	Node::Node() : position(0.0f, 0.0f), gScore(0.0f), previous(nullptr) {}
-	Node::Node(float x, float y) : position(x, y), gScore(0.0f), previous(nullptr) {}
+	Node::Node() : position(0.0f, 0.0f), gScore(0.0f), hScore(0.0f), fScore(0.0f), previous(nullptr) {}
+	Node::Node(float x, float y) : position(x, y), gScore(0.0f), hScore(0.0f), fScore(0.0f), previous(nullptr) {}
 
 	void Node::ConnectTo(Node* other, float cost) {
 		connections.push_back(Edge(other, cost));
@@ -180,7 +180,7 @@ namespace AIForGames
 
     void PathAgent::GoToNode(Node* node) {
 		if (node == nullptr) return; // validate the target node
-		m_path = DijkstrasSearch(m_currentNode, node);
+		m_path = AStarSearch(m_currentNode, node);
         m_currentIndex = 0; // set index to 0 if path excludes current node, or 1 if path includes current node
     }
 
@@ -201,13 +201,15 @@ namespace AIForGames
 
 	// ------------- End of PathAgent -------------
 
-    // ------------- Dijkstra's Search Algorithm -------------
-    std::vector<Node*> DijkstrasSearch(Node* startNode, Node* endNode) {
+    // ------------- A* Search Algorithm -------------
+    std::vector<Node*> AStarSearch(Node* startNode, Node* endNode) {
         if (startNode == nullptr || endNode == nullptr) return {}; // validate start and end nodes
         if (startNode == endNode) return { startNode }; // if start and end node are the same, return start node as the only node in the path
 
         // initialise starting node
 		startNode->gScore = 0.0f;
+		startNode->hScore = glm::distance(startNode->position, endNode->position);
+		startNode->fScore = startNode->gScore + startNode->hScore;
 		startNode->previous = nullptr;
 
 		// create temporary lists for the open and closed nodes
@@ -218,8 +220,8 @@ namespace AIForGames
 
         while (!openList.empty())
         {
-            // sort open list by g-score
-            std::sort(openList.begin(), openList.end(), [](const Node* a, const Node* b) { return a->gScore < b->gScore; });
+            // sort open list by g-score + h-score (f-score)
+            std::sort(openList.begin(), openList.end(), [](const Node* a, const Node* b) { return a->fScore < b->fScore; });
 
 			// set current node to the first node in the open list
 			Node* currentNode = openList.front();
@@ -275,7 +277,7 @@ namespace AIForGames
 		return path;
     }
 
-	// ------------- End of Dijkstra's Search Algorithm -------------
+	// ------------- End of A* Search Algorithm -------------
 
 	// ------------- NavMesh -------------
 	NavMesh::NavMesh(float width, float height) {
@@ -410,4 +412,6 @@ namespace AIForGames
             DrawRectangle((int)o.x, (int)o.y, (int)o.w, (int)o.h, m_obstacleColor);
         }
     }
+
+	// ------------- End of NavMesh -------------
 }

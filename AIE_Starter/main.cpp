@@ -36,7 +36,7 @@ int main(int argc, char* argv[])
     int screenWidth = 1280;
     int screenHeight = 720;
 
-    InitWindow(screenWidth, screenHeight, "Dijkstra's Algorithm");
+    InitWindow(screenWidth, screenHeight, "A* Algorithm");
     SetTargetFPS(60);
 
 	NodeMap nodeMap;
@@ -61,6 +61,11 @@ int main(int argc, char* argv[])
 
 	Agent agent2(&nodeMap, new WanderBehaviour());
 	agent2.SetNode(nodeMap.GetRandomNode());
+
+	Agent agent3(&nodeMap, new SelectorBehaviour(new FollowBehaviour(), new WanderBehaviour()));
+	agent3.SetNode(nodeMap.GetRandomNode());
+	agent3.SetTarget(&agent);
+    agent3.SetSpeed(32);
 
     NavMesh navigation(screenWidth, screenHeight);
     srand(42);
@@ -91,11 +96,14 @@ int main(int argc, char* argv[])
 		agent2.Update(deltaTime);
 		agent2.Draw(); // draw the wandering agent
 
+		agent3.Update(deltaTime);
+		agent3.Draw(); // draw the following agent
+
         EndDrawing();
     }
 
     // De-Initialization
-    //--------------------------------------------------------------------------------------   
+    //--------------------------------------------------------------------------------------
     CloseWindow();
 
     return 0;

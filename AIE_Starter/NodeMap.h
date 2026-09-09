@@ -23,5 +23,6 @@ namespace AIForGames
         Node* GetNode(int x, int y);
         Node* GetClosestNode(glm::vec2 worldPos);
         Node* GetRandomNode();
+		float GetCellSize() const { return m_cellSize; }
     };
 }

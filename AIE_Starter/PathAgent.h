@@ -1,8 +1,8 @@
 #pragma once
 
 #include "Node.h"
-#include "raylib.h"
 #include <glm/glm.hpp>
+#include "raylib.h"
 #include <vector>
 
 namespace AIForGames
@@ -20,9 +20,11 @@ namespace AIForGames
         PathAgent();
         void Update(float deltaTime);
         void GoToNode(Node* node);
-        void Draw();
-        void SetNode(Node* node);
-        void SetSpeed(float speed);
-        void GetPath(std::vector<Node*>& path);
+        void Draw(Color color);
+		void SetNode(Node* node) { m_currentNode = node; if (node != nullptr) m_position = node->position; }
+		Node* GetNode() const { return m_currentNode; }
+		void SetSpeed(float speed) { m_speed = speed; }
+		void GetPath(std::vector<Node*>& path) { path = m_path; }
+        glm::vec2 GetPosition() const { return m_position; }
     };
 }

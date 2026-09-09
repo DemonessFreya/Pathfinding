@@ -23,4 +23,28 @@ namespace AIForGames
     public:
 		virtual void Update(Agent* agent, float deltaTime);
     };
+
+    class FollowBehaviour : public Behaviour
+    {
+    public:
+		FollowBehaviour() : lastTargetPos(0.0f, 0.0f) {}
+        virtual void Update(Agent* agent, float deltaTime);
+    private:
+        glm::vec2 lastTargetPos;
+    };
+
+    class SelectorBehaviour : public Behaviour
+    {
+    private:
+		Behaviour* m_b1;
+		Behaviour* m_b2;
+		Behaviour* m_selected;
+    public:
+		SelectorBehaviour(Behaviour* b1, Behaviour* b2) : m_b1(b1), m_b2(b2), m_selected(nullptr) {}
+		~SelectorBehaviour() { delete m_b1; delete m_b2; }
+
+        virtual void Update(Agent* agent, float deltaTime);
+
+        void SetBehaviour(Behaviour* b, Agent* agent);
+    };
 }

@@ -147,6 +147,7 @@ namespace AIForGames
 
 	// ------------- End of NodeMap -------------
 
+
 	// ------------- PathAgent -------------
 	PathAgent::PathAgent() : m_position(0.0f, 0.0f), m_currentIndex(0), m_currentNode(nullptr), m_speed(100.0f) {}
 
@@ -196,22 +197,12 @@ namespace AIForGames
         m_currentIndex = 0; // set index to 0 if path excludes current node, or 1 if path includes current node
     }
 
-    void PathAgent::Draw() {
-        DrawCircle((int)m_position.x, (int)m_position.y, 8, { 255,255,0,255 });
+    void PathAgent::Draw(Color color) {
+        DrawCircle((int)m_position.x, (int)m_position.y, 8, color);
     }
-
-    void PathAgent::SetNode(Node* node) {
-        m_currentNode = node;
-        if (node != nullptr) {
-            m_position = node->position;
-		}
-    }
-
-    void PathAgent::SetSpeed(float speed) { m_speed = speed; }
-
-    void PathAgent::GetPath(std::vector<Node*>& path) { path = m_path; }
 
 	// ------------- End of PathAgent -------------
+
 
 	// ------------- Agent -------------
     void Agent::Update(float deltaTime) {
@@ -222,17 +213,36 @@ namespace AIForGames
     }
 
     void Agent::Draw() {
-        m_pathAgent.Draw();
+        m_pathAgent.Draw(m_color);
 	}
 
     void Agent::GoTo(glm::vec2 point) {
         Node* end = m_nodeMap->GetClosestNode(point);
+
+        // if the agent has no current node, find the closest one based on its current position 
+        if (m_pathAgent.GetNode() == nullptr) {
+            Node* startNode = m_nodeMap->GetClosestNode(m_pathAgent.GetPosition());
+            if (startNode != nullptr) {
+                m_pathAgent.SetNode(startNode);
+            }
+        }
+
         m_pathAgent.GoToNode(end);
     }
 
     bool Agent::PathComplete() {
         return GetPath().empty();
     }
+
+    void Agent::SetNode(Node* node) {
+        m_pathAgent.SetNode(node);
+    }
+
+    std::vector<Node*> Agent::GetPath() {
+        std::vector<Node*> path;
+        m_pathAgent.GetPath(path);
+        return path;
+	}
 
     void GotoPointBehaviour::Update(Agent* agent, float deltaTime) {
         // read mouseclicks, left for start node, end for right node
@@ -243,20 +253,6 @@ namespace AIForGames
         }
     }
 
-    void Agent::SetNode(Node* node) {
-        m_pathAgent.SetNode(node);
-	}
-
-	std::vector<Node*> Agent::GetPath() {
-        std::vector<Node*> path;
-        m_pathAgent.GetPath(path);
-        return path;
-    }
-
-    NodeMap* Agent::GetNodeMap() const {
-        return m_nodeMap;
-	}
-
     void WanderBehaviour::Update(Agent* agent, float deltaTime) {
         // if the agent has no path, pick a random node and go to it
         if (agent->PathComplete()) {
@@ -265,7 +261,44 @@ namespace AIForGames
         }
 	}
 
+    void FollowBehaviour::Update(Agent* agent, float deltaTime) {
+        // check if the agent has moved significantly from its last position
+        // if so we want to repath towards it
+        Agent* target = agent->GetTarget();
+
+        float dist = glm::distance(target->GetPosition(), lastTargetPos);
+        if (dist > agent->GetNodeMap()->GetCellSize())
+        {
+            lastTargetPos = target->GetPosition();
+            agent->GoTo(lastTargetPos);
+        }
+        
+	}
+
+    void SelectorBehaviour::SetBehaviour(Behaviour* b, Agent* agent) {
+        if (m_selected != b)
+        {
+            m_selected = b;
+            agent->Reset();
+        }
+	}
+
+    void SelectorBehaviour::Update(Agent* agent, float deltaTime) {
+		if (glm::distance(agent->GetPosition(), agent->GetTarget()->GetPosition()) < agent->GetNodeMap()->GetCellSize() * 3) // if the agent is within 3 cells of its target, switch to follow behaviour
+        {
+            SetBehaviour(m_b1, agent);
+            agent->SetColor({ 255, 0, 0, 255 }); // red
+        }
+        else
+        {
+            SetBehaviour(m_b2, agent);
+            agent->SetColor({ 0, 255, 255, 255 }); // cyan
+        }
+        m_selected->Update(agent, deltaTime);
+	}
+
 	// ------------- End of Agent -------------
+
 
     // ------------- A* Search Algorithm -------------
     std::vector<Node*> AStarSearch(Node* startNode, Node* endNode) {
@@ -284,6 +317,8 @@ namespace AIForGames
 
         openList.push_back(startNode);
 
+		bool pathFound = false;
+
         while (!openList.empty())
         {
             // sort open list by g-score + h-score (f-score)
@@ -295,7 +330,10 @@ namespace AIForGames
             // if we visit the endNode, then we can exit early.
             // sorting the openList above guarentees the shortest path is found, given no negative costs (a prerequisite of the algorithm).
             // this is an optional optimisation that improves performance, but doesn't always guarantee the shortest path.
-            if (currentNode == endNode) break;
+            if (currentNode == endNode) {
+                pathFound = true;
+                break;
+            }
 
             // remove current node from open list and add to closed list
             openList.erase(openList.begin());
@@ -312,6 +350,8 @@ namespace AIForGames
                     auto iter = std::find(openList.begin(), openList.end(), c.target);
                     if (iter == openList.end()) {
                         c.target->gScore = gScore;
+                        c.target->hScore = glm::distance(c.target->position, endNode->position);
+                        c.target->fScore = c.target->gScore + c.target->hScore;
                         c.target->previous = currentNode;
                         openList.push_back(c.target);
                     }
@@ -320,6 +360,7 @@ namespace AIForGames
                     else {
                         if (gScore < c.target->gScore) {
                             c.target->gScore = gScore;
+                            c.target->fScore = c.target->gScore + c.target->hScore;
                             c.target->previous = currentNode;
                         }
                     }
@@ -330,7 +371,8 @@ namespace AIForGames
         // create path in reverse from endNode to startNode
         std::vector<Node*> path;
 
-        if (endNode->previous != nullptr || endNode == startNode) {
+		// only reconstruct the path if we found a path to the endNode in this specific search. if we didn't find a path, then the path will be empty.
+        if (pathFound) {
             Node* currentNode = endNode;
             while (currentNode != nullptr) {
                 path.push_back(currentNode);
@@ -344,6 +386,7 @@ namespace AIForGames
     }
 
     // ------------- End of A* Search Algorithm -------------
+
 
 	// ------------- NavMesh -------------
 	NavMesh::NavMesh(float width, float height) {

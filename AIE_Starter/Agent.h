@@ -18,10 +18,13 @@ namespace AIForGames
         void Update(float deltaTime);
         void Draw();
         void GoTo(glm::vec2 point);
+        bool PathComplete();
 
         // wrapper helpers for PathAgent
         void SetNode(Node* node);
         std::vector<Node*> GetPath();
+
+        NodeMap* GetNodeMap() const;
 
     private:
         PathAgent m_pathAgent;

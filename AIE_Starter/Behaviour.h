@@ -17,4 +17,10 @@ namespace AIForGames
     public:
         virtual void Update(Agent* agent, float deltaTime) override;
     };
+
+    class WanderBehaviour : public Behaviour
+    {
+    public:
+		virtual void Update(Agent* agent, float deltaTime);
+    };
 }

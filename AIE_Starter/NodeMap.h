@@ -22,5 +22,6 @@ namespace AIForGames
         void DrawPath(std::vector<Node*> path, Color lineColor);
         Node* GetNode(int x, int y);
         Node* GetClosestNode(glm::vec2 worldPos);
+        Node* GetRandomNode();
     };
 }

@@ -59,6 +59,9 @@ int main(int argc, char* argv[])
 	Agent agent(&nodeMap, new GotoPointBehaviour());
     agent.SetNode(start);
 
+	Agent agent2(&nodeMap, new WanderBehaviour());
+	agent2.SetNode(nodeMap.GetRandomNode());
+
     NavMesh navigation(screenWidth, screenHeight);
     srand(42);
     navigation.addObstacles(12, 60, 60);
@@ -84,6 +87,9 @@ int main(int argc, char* argv[])
 
 		agent.Update(deltaTime);
 		agent.Draw(); // draw the agent
+
+		agent2.Update(deltaTime);
+		agent2.Draw(); // draw the wandering agent
 
         EndDrawing();
     }

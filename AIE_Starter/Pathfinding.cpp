@@ -134,6 +134,17 @@ namespace AIForGames
 		return GetNode(i, j);
 	}
 
+    Node* NodeMap::GetRandomNode() {
+        // pick a random node from the map
+		Node* node = nullptr;
+        while (node == nullptr) {
+            int x = rand() % m_width;
+            int y = rand() % m_height;
+            node = GetNode(x, y);
+		}
+        return node;
+	}
+
 	// ------------- End of NodeMap -------------
 
 	// ------------- PathAgent -------------
@@ -202,84 +213,6 @@ namespace AIForGames
 
 	// ------------- End of PathAgent -------------
 
-    // ------------- A* Search Algorithm -------------
-    std::vector<Node*> AStarSearch(Node* startNode, Node* endNode) {
-        if (startNode == nullptr || endNode == nullptr) return {}; // validate start and end nodes
-        if (startNode == endNode) return { startNode }; // if start and end node are the same, return start node as the only node in the path
-
-        // initialise starting node
-		startNode->gScore = 0.0f;
-		startNode->hScore = glm::distance(startNode->position, endNode->position);
-		startNode->fScore = startNode->gScore + startNode->hScore;
-		startNode->previous = nullptr;
-
-		// create temporary lists for the open and closed nodes
-		std::vector<Node*> openList;
-		std::vector<Node*> closedList;
-
-		openList.push_back(startNode);
-
-        while (!openList.empty())
-        {
-            // sort open list by g-score + h-score (f-score)
-            std::sort(openList.begin(), openList.end(), [](const Node* a, const Node* b) { return a->fScore < b->fScore; });
-
-			// set current node to the first node in the open list
-			Node* currentNode = openList.front();
-
-            // if we visit the endNode, then we can exit early.
-            // sorting the openList above guarentees the shortest path is found, given no negative costs (a prerequisite of the algorithm).
-			// this is an optional optimisation that improves performance, but doesn't always guarantee the shortest path.
-            if (currentNode == endNode) break;
-
-			// remove current node from open list and add to closed list
-			openList.erase(openList.begin());
-			closedList.push_back(currentNode);
-
-			// iterate through the current node's connections
-            for (auto& c : currentNode->connections) {
-				// if c.target not in closed list
-                if (std::find(closedList.begin(), closedList.end(), c.target) == closedList.end()) {
-                    float gScore = currentNode->gScore + c.cost;
-
-					// have not visited node yet, so calculate g-score and update its parent.
-					// also add it to the open list for processing.
-					auto iter = std::find(openList.begin(), openList.end(), c.target);
-                    if (iter == openList.end()) {
-                        c.target->gScore = gScore;
-                        c.target->previous = currentNode;
-                        openList.push_back(c.target);
-					}
-                    // node is already in the openList with a valid g-score.
-                    // so compare the calculated g-score with the existing g-score to find the shorter path.
-                    else {
-                        if (gScore < c.target->gScore) {
-                            c.target->gScore = gScore;
-                            c.target->previous = currentNode;
-						}
-                    }
-                }
-            }
-        }
-
-		// create path in reverse from endNode to startNode
-		std::vector<Node*> path;
-
-        if (endNode->previous != nullptr || endNode == startNode) {
-			Node* currentNode = endNode;
-            while (currentNode != nullptr) {
-                path.push_back(currentNode);
-                currentNode = currentNode->previous;
-			}
-			std::reverse(path.begin(), path.end()); // reverse the path to be from startNode to endNode
-		}
-
-		// return the path to finish Dijkstra's search
-		return path;
-    }
-
-	// ------------- End of A* Search Algorithm -------------
-
 	// ------------- Agent -------------
     void Agent::Update(float deltaTime) {
         if (m_current) {
@@ -295,6 +228,10 @@ namespace AIForGames
     void Agent::GoTo(glm::vec2 point) {
         Node* end = m_nodeMap->GetClosestNode(point);
         m_pathAgent.GoToNode(end);
+    }
+
+    bool Agent::PathComplete() {
+        return GetPath().empty();
     }
 
     void GotoPointBehaviour::Update(Agent* agent, float deltaTime) {
@@ -316,7 +253,97 @@ namespace AIForGames
         return path;
     }
 
+    NodeMap* Agent::GetNodeMap() const {
+        return m_nodeMap;
+	}
+
+    void WanderBehaviour::Update(Agent* agent, float deltaTime) {
+        // if the agent has no path, pick a random node and go to it
+        if (agent->PathComplete()) {
+            Node* randomNode = agent->GetNodeMap()->GetRandomNode();
+            agent->GoTo(randomNode->position);
+        }
+	}
+
 	// ------------- End of Agent -------------
+
+    // ------------- A* Search Algorithm -------------
+    std::vector<Node*> AStarSearch(Node* startNode, Node* endNode) {
+        if (startNode == nullptr || endNode == nullptr) return {}; // validate start and end nodes
+        if (startNode == endNode) return { startNode }; // if start and end node are the same, return start node as the only node in the path
+
+        // initialise starting node
+        startNode->gScore = 0.0f;
+        startNode->hScore = glm::distance(startNode->position, endNode->position);
+        startNode->fScore = startNode->gScore + startNode->hScore;
+        startNode->previous = nullptr;
+
+        // create temporary lists for the open and closed nodes
+        std::vector<Node*> openList;
+        std::vector<Node*> closedList;
+
+        openList.push_back(startNode);
+
+        while (!openList.empty())
+        {
+            // sort open list by g-score + h-score (f-score)
+            std::sort(openList.begin(), openList.end(), [](const Node* a, const Node* b) { return a->fScore < b->fScore; });
+
+            // set current node to the first node in the open list
+            Node* currentNode = openList.front();
+
+            // if we visit the endNode, then we can exit early.
+            // sorting the openList above guarentees the shortest path is found, given no negative costs (a prerequisite of the algorithm).
+            // this is an optional optimisation that improves performance, but doesn't always guarantee the shortest path.
+            if (currentNode == endNode) break;
+
+            // remove current node from open list and add to closed list
+            openList.erase(openList.begin());
+            closedList.push_back(currentNode);
+
+            // iterate through the current node's connections
+            for (auto& c : currentNode->connections) {
+                // if c.target not in closed list
+                if (std::find(closedList.begin(), closedList.end(), c.target) == closedList.end()) {
+                    float gScore = currentNode->gScore + c.cost;
+
+                    // have not visited node yet, so calculate g-score and update its parent.
+                    // also add it to the open list for processing.
+                    auto iter = std::find(openList.begin(), openList.end(), c.target);
+                    if (iter == openList.end()) {
+                        c.target->gScore = gScore;
+                        c.target->previous = currentNode;
+                        openList.push_back(c.target);
+                    }
+                    // node is already in the openList with a valid g-score.
+                    // so compare the calculated g-score with the existing g-score to find the shorter path.
+                    else {
+                        if (gScore < c.target->gScore) {
+                            c.target->gScore = gScore;
+                            c.target->previous = currentNode;
+                        }
+                    }
+                }
+            }
+        }
+
+        // create path in reverse from endNode to startNode
+        std::vector<Node*> path;
+
+        if (endNode->previous != nullptr || endNode == startNode) {
+            Node* currentNode = endNode;
+            while (currentNode != nullptr) {
+                path.push_back(currentNode);
+                currentNode = currentNode->previous;
+            }
+            std::reverse(path.begin(), path.end()); // reverse the path to be from startNode to endNode
+        }
+
+        // return the path to finish Dijkstra's search
+        return path;
+    }
+
+    // ------------- End of A* Search Algorithm -------------
 
 	// ------------- NavMesh -------------
 	NavMesh::NavMesh(float width, float height) {

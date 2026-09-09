@@ -153,6 +153,7 @@
   <ItemGroup>
     <ClInclude Include="Agent.h" />
     <ClInclude Include="Behaviour.h" />
+    <ClInclude Include="FSM.h" />
     <ClInclude Include="NavMesh.h" />
     <ClInclude Include="Node.h" />
     <ClInclude Include="NodeMap.h" />

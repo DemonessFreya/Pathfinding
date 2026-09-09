@@ -1,5 +1,6 @@
 #include "Agent.h"
 #include "NavMesh.h"
+#include "FSM.h"
 #include <iostream>
 #include <algorithm>
 
@@ -244,6 +245,11 @@ namespace AIForGames
         return path;
 	}
 
+    // ------------- End of Agent -------------
+
+
+	// ------------- Behaviour -------------
+
     void GotoPointBehaviour::Update(Agent* agent, float deltaTime) {
         // read mouseclicks, left for start node, end for right node
         if (IsMouseButtonPressed(0))
@@ -297,7 +303,54 @@ namespace AIForGames
         m_selected->Update(agent, deltaTime);
 	}
 
-	// ------------- End of Agent -------------
+	// ------------- End of Behaviour -------------
+
+
+	// ------------ Finite State Machine -------------
+    State::~State() {
+        // we own the behaviours assigned to us
+        for (Behaviour* b : m_behaviours)
+            delete b;
+
+        // we also own the Conditions in each Transition
+        // (but the states are references, so don’t clean them up here)
+        for (Transition t : m_transitions)
+            delete t.condition;
+    }
+
+    FiniteStateMachine::~FiniteStateMachine() {
+        for (State* s : m_states)
+            delete s;
+    }
+
+    void FiniteStateMachine::Update(Agent* agent, float deltaTime) {
+        State* newState = nullptr;
+
+        // check the current state's transitions
+        for (State::Transition t : m_currentState->GetTransitions())
+        {
+            if (t.condition->IsTrue(agent))
+                newState = t.targetState;
+        }
+
+        // if we've changed state, clean up the old one and initialise the new one
+        if (newState != nullptr && newState != m_currentState)
+        {
+            m_currentState->Exit(agent);
+            m_currentState = newState;
+            m_currentState->Enter(agent);
+        }
+
+        // update the current state
+        m_currentState->Update(agent, deltaTime);
+    }
+
+    void State::Update(Agent* agent, float deltaTime) {
+        for (Behaviour* b : m_behaviours)
+            b->Update(agent, deltaTime);
+    }
+
+	// ------------- End of Finite State Machine -------------
 
 
     // ------------- A* Search Algorithm -------------

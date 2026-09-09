@@ -139,7 +139,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="AIE_Starter.cpp" />
+    <ClCompile Include="main.cpp" />
     <ClCompile Include="Pathfinding.cpp" />
     <ClCompile Include="poly2tri\common\shapes.cc" />
     <ClCompile Include="poly2tri\sweep\advancing_front.cc" />
@@ -151,7 +151,12 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Pathfinding.h" />
+    <ClInclude Include="Agent.h" />
+    <ClInclude Include="Behaviour.h" />
+    <ClInclude Include="NavMesh.h" />
+    <ClInclude Include="Node.h" />
+    <ClInclude Include="NodeMap.h" />
+    <ClInclude Include="PathAgent.h" />
     <ClInclude Include="poly2tri\common\shapes.h" />
     <ClInclude Include="poly2tri\common\utils.h" />
     <ClInclude Include="poly2tri\poly2tri.h" />

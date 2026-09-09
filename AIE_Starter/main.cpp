@@ -24,7 +24,8 @@
 #define RAYGUI_IMPLEMENTATION
 #define RAYGUI_SUPPORT_ICONS
 #include "raygui.h"
-#include "Pathfinding.h"
+#include "Agent.h"
+#include "NavMesh.h"
 #include <vector>
 #include <string>
 
@@ -55,9 +56,8 @@ int main(int argc, char* argv[])
 	std::vector<Node*> path = AStarSearch(start, end);
 	Color lineColor = { 0, 255, 0, 255 }; // bright green
 
-	PathAgent agent;
-	agent.SetNode(start);
-	agent.SetSpeed(300.0f);
+	Agent agent(&nodeMap, new GotoPointBehaviour());
+    agent.SetNode(start);
 
     NavMesh navigation(screenWidth, screenHeight);
     srand(42);
@@ -74,27 +74,15 @@ int main(int argc, char* argv[])
 		deltaTime = fTime - time;
 		time = fTime;
 
-        // click on node map to set a new target node and recalculate the path
-        if (IsMouseButtonPressed(0)) {
-            Vector2 mousePos = GetMousePosition();
-            Node* pathEnd = nodeMap.GetClosestNode(glm::vec2(mousePos.x, mousePos.y));
-            if (pathEnd != nullptr) {
-                agent.GoToNode(pathEnd);
-            }
-        }
-
-        agent.Update(deltaTime); // update the agent's position along the path
-
         BeginDrawing();
-		ClearBackground(BLACK); // black background
+		ClearBackground(BLACK);
+
+        nodeMap.Draw(true);
+		nodeMap.DrawPath(agent.GetPath(), lineColor);
 
         //navigation.Draw();
 
-        nodeMap.Draw(true); // draw the node map
-		std::vector<Node*> path;
-		agent.GetPath(path);
-		nodeMap.DrawPath(path, lineColor); // draw the path
-
+		agent.Update(deltaTime);
 		agent.Draw(); // draw the agent
 
         EndDrawing();

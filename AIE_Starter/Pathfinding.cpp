@@ -1,4 +1,5 @@
-#include "Pathfinding.h"
+#include "Agent.h"
+#include "NavMesh.h"
 #include <iostream>
 #include <algorithm>
 
@@ -278,6 +279,44 @@ namespace AIForGames
     }
 
 	// ------------- End of A* Search Algorithm -------------
+
+	// ------------- Agent -------------
+    void Agent::Update(float deltaTime) {
+        if (m_current) {
+            m_current->Update(this, deltaTime);
+		}
+		m_pathAgent.Update(deltaTime);
+    }
+
+    void Agent::Draw() {
+        m_pathAgent.Draw();
+	}
+
+    void Agent::GoTo(glm::vec2 point) {
+        Node* end = m_nodeMap->GetClosestNode(point);
+        m_pathAgent.GoToNode(end);
+    }
+
+    void GotoPointBehaviour::Update(Agent* agent, float deltaTime) {
+        // read mouseclicks, left for start node, end for right node
+        if (IsMouseButtonPressed(0))
+        {
+            Vector2 mousePos = GetMousePosition();
+            agent->GoTo(glm::vec2(mousePos.x, mousePos.y));
+        }
+    }
+
+    void Agent::SetNode(Node* node) {
+        m_pathAgent.SetNode(node);
+	}
+
+	std::vector<Node*> Agent::GetPath() {
+        std::vector<Node*> path;
+        m_pathAgent.GetPath(path);
+        return path;
+    }
+
+	// ------------- End of Agent -------------
 
 	// ------------- NavMesh -------------
 	NavMesh::NavMesh(float width, float height) {

@@ -25,11 +25,14 @@ namespace AIForGames {
 		std::vector<Transition> m_transitions;
 
 	public:
-		State();
+		State() : m_behaviours({}), m_transitions({}) {}
+		State(Behaviour* behaviour);
 		~State();
-		virtual void Enter(Agent* agent) {}
 		virtual void Update(Agent* agent, float deltaTime);
-		virtual void Exit(Agent* agent) {}
+		virtual void Enter(Agent* agent);
+		virtual void Exit(Agent* agent);
+
+		void AddTransition(Condition* condition, State* targetState);
 
 		std::vector<Transition> GetTransitions() const { return m_transitions; }
 	};
@@ -47,5 +50,19 @@ namespace AIForGames {
 		virtual ~FiniteStateMachine();
 
 		void Update(Agent* agent, float deltaTime);
+		virtual void Enter(Agent* agent) override;
+		virtual void Exit(Agent* agent) override;
+		void AddState(State* state);
+	};
+
+	class DistanceCondition : public Condition
+	{
+	private:
+		float m_distance;
+		bool m_lessThan;
+
+	public:
+		DistanceCondition(float d, bool lt) : m_distance(d), m_lessThan(lt) {}
+		virtual bool IsTrue(Agent* agent);
 	};
 }

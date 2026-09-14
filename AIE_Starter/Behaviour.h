@@ -10,6 +10,8 @@ namespace AIForGames
     public:
         virtual ~Behaviour() {}
         virtual void Update(Agent* agent, float deltaTime) = 0;
+		virtual void Enter(Agent* agent) {}
+		virtual void Exit(Agent* agent) {}
     };
 
     class GotoPointBehaviour : public Behaviour
@@ -22,6 +24,7 @@ namespace AIForGames
     {
     public:
 		virtual void Update(Agent* agent, float deltaTime);
+		virtual void Enter(Agent* agent) override;
     };
 
     class FollowBehaviour : public Behaviour
@@ -29,6 +32,7 @@ namespace AIForGames
     public:
 		FollowBehaviour() : lastTargetPos(0.0f, 0.0f) {}
         virtual void Update(Agent* agent, float deltaTime);
+		virtual void Enter(Agent* agent) override;
     private:
         glm::vec2 lastTargetPos;
     };

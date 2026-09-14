@@ -25,6 +25,7 @@
 #define RAYGUI_SUPPORT_ICONS
 #include "raygui.h"
 #include "Agent.h"
+#include "FSM.h"
 #include "NavMesh.h"
 #include <vector>
 #include <string>
@@ -62,10 +63,30 @@ int main(int argc, char* argv[])
 	Agent agent2(&nodeMap, new WanderBehaviour());
 	agent2.SetNode(nodeMap.GetRandomNode());
 
-	Agent agent3(&nodeMap, new SelectorBehaviour(new FollowBehaviour(), new WanderBehaviour()));
+    // set up a FSM, we're going to have two states with their own conditions
+    DistanceCondition* closerThan5 = new DistanceCondition(5.0f * nodeMap.GetCellSize(), true);
+    DistanceCondition* furtherThan7 = new DistanceCondition(7.0f * nodeMap.GetCellSize(), false);
+
+    // register these states with the FSM, so its responsible for deleting them now
+    State* wanderState = new State(new WanderBehaviour());
+    State* followState = new State(new FollowBehaviour());
+    wanderState->AddTransition(closerThan5, followState);
+    followState->AddTransition(furtherThan7, wanderState);
+
+    // make a finite state machine that starts off wandering
+    FiniteStateMachine* fsm = new FiniteStateMachine(wanderState);
+    fsm->AddState(wanderState);
+    fsm->AddState(followState);
+
+    Agent agent3(&nodeMap, fsm);
+    agent3.SetNode(nodeMap.GetRandomNode());
+    agent3.SetTarget(&agent);
+    agent3.SetSpeed(32);
+
+	/*Agent agent3(&nodeMap, new SelectorBehaviour(new FollowBehaviour(), new WanderBehaviour()));
 	agent3.SetNode(nodeMap.GetRandomNode());
 	agent3.SetTarget(&agent);
-    agent3.SetSpeed(32);
+    agent3.SetSpeed(32);*/
 
     NavMesh navigation(screenWidth, screenHeight);
     srand(42);

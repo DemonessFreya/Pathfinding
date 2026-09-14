@@ -11,7 +11,10 @@ namespace AIForGames
     {
     public:
         Agent() : m_current(nullptr), m_nodeMap(nullptr), m_target(nullptr), m_speed(0), m_color({ 255, 255, 0, 255 }) {}
-        Agent(NodeMap* _nodeMap, Behaviour* _behaviour) : m_current(_behaviour), m_nodeMap(_nodeMap), m_target(nullptr), m_speed(0), m_color({ 255, 255, 0, 255 }) {}
+        Agent(NodeMap* _nodeMap, Behaviour* _behaviour) : m_current(_behaviour), m_nodeMap(_nodeMap), m_target(nullptr), m_speed(0), m_color({ 255, 255, 0, 255 })
+        {
+			if (m_current != nullptr) m_current->Enter(this);
+        }
         ~Agent() { delete m_current; }
 
         void Update(float deltaTime);

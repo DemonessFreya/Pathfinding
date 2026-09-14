@@ -267,6 +267,11 @@ namespace AIForGames
         }
 	}
 
+    void WanderBehaviour::Enter(Agent* agent) {
+		agent->SetColor({ 0, 255, 255, 255 }); // set colour to cyan when wandering
+        agent->Reset();
+    }
+
     void FollowBehaviour::Update(Agent* agent, float deltaTime) {
         // check if the agent has moved significantly from its last position
         // if so we want to repath towards it
@@ -280,6 +285,11 @@ namespace AIForGames
         }
         
 	}
+
+    void FollowBehaviour::Enter(Agent* agent) {
+		agent->SetColor({ 255, 0, 0, 255 }); // set colour to red when following
+		agent->Reset();
+    }
 
     void SelectorBehaviour::SetBehaviour(Behaviour* b, Agent* agent) {
         if (m_selected != b)
@@ -307,6 +317,12 @@ namespace AIForGames
 
 
 	// ------------ Finite State Machine -------------
+    State::State(Behaviour* behaviour) {
+        if (behaviour != nullptr) {
+            m_behaviours.push_back(behaviour);
+        }
+    }
+
     State::~State() {
         // we own the behaviours assigned to us
         for (Behaviour* b : m_behaviours)
@@ -317,6 +333,28 @@ namespace AIForGames
         for (Transition t : m_transitions)
             delete t.condition;
     }
+
+    void State::Update(Agent* agent, float deltaTime) {
+        for (Behaviour* b : m_behaviours)
+            b->Update(agent, deltaTime);
+    }
+
+    void State::AddTransition(Condition* condition, State* targetState) {
+        Transition t;
+        t.condition = condition;
+        t.targetState = targetState;
+        m_transitions.push_back(t);
+    }
+
+    void State::Enter(Agent* agent) {
+        for (Behaviour* b : m_behaviours)
+            b->Enter(agent);
+	}
+
+    void State::Exit(Agent* agent) {
+        for (Behaviour* b : m_behaviours)
+			b->Exit(agent);
+	}
 
     FiniteStateMachine::~FiniteStateMachine() {
         for (State* s : m_states)
@@ -345,9 +383,26 @@ namespace AIForGames
         m_currentState->Update(agent, deltaTime);
     }
 
-    void State::Update(Agent* agent, float deltaTime) {
-        for (Behaviour* b : m_behaviours)
-            b->Update(agent, deltaTime);
+    void FiniteStateMachine::AddState(State* state) {
+        if (state != nullptr) {
+            m_states.push_back(state);
+        }
+	}
+
+    void FiniteStateMachine::Enter(Agent* agent) {
+        if (m_currentState != nullptr) {
+            m_currentState->Enter(agent);
+        }
+	}
+
+    void FiniteStateMachine::Exit(Agent* agent) {
+        if (m_currentState != nullptr) {
+            m_currentState->Exit(agent);
+        }
+    }
+
+    bool DistanceCondition::IsTrue(Agent* agent) {
+        return (glm::distance(agent->GetPosition(), agent->GetTarget()->GetPosition()) < m_distance) == m_lessThan;
     }
 
 	// ------------- End of Finite State Machine -------------

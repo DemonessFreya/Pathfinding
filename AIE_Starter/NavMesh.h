@@ -2,73 +2,20 @@
 
 #include <glm/glm.hpp>
 #include <vector>
-#include <string>
-#include "raylib.h"
 #include "poly2tri/poly2tri.h"
+#include "Node.h"
 
 namespace AIForGames
 {
-	struct Node;
-
-	std::vector<Node*> DijkstrasSearch(Node* startNode, Node* endNode);
-
-	struct Edge {
-		Edge();
-		Edge(Node* _target, float _cost);
-
-		Node* target;
-		float cost;
-	};
-
-	struct Node {
-		Node();
-		Node(float x, float y);
-
-		glm::vec2 position;
-		std::vector<Edge> connections;
-
-		float gScore;
-		Node* previous;
-
-		void ConnectTo(Node* other, float cost);
-	};
-
-	class NodeMap
+	// interface type class for NavMesh and NodeMap, so we can give our agent's either of them
+	class INavigatable
 	{
-		int m_width = 0;
-		int m_height = 0;
-		float m_cellSize = 0.0f;
-
-		Node** m_nodes = nullptr;
-
 	public:
-		~NodeMap();
-
-		void Initialise(std::vector<std::string> asciiMap, int cellSize);
-		void Draw(bool shouldDraw);
-		void DrawPath(std::vector<Node*> path, Color lineColor);
-		Node* GetNode(int x, int y);
-		Node* GetClosestNode(glm::vec2 worldPos);
-	};
-
-	class PathAgent
-	{
-	private:
-		glm::vec2 m_position;
-
-		std::vector<Node*> m_path;
-		int m_currentIndex;
-		Node* m_currentNode;
-
-		float m_speed;
-	public:
-		PathAgent();
-		void Update(float deltaTime);
-		void GoToNode(Node* node);
-		void Draw();
-		void SetNode(Node* node);
-		void SetSpeed(float speed);
-		void GetPath(std::vector<Node*>& path);
+		virtual void Draw() = 0;
+		virtual Node* GetClosestNode(glm::vec2 worldPos) = 0;
+		// default value used to determine if we've "moved significantly" when tracking a moving target
+		virtual float GetCellSize() { return 32; }
+		virtual Node* GetRandomNode() = 0;
 	};
 
 	class NavMesh

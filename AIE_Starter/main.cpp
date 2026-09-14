@@ -24,7 +24,9 @@
 #define RAYGUI_IMPLEMENTATION
 #define RAYGUI_SUPPORT_ICONS
 #include "raygui.h"
-#include "Pathfinding.h"
+#include "Agent.h"
+#include "FSM.h"
+#include "NavMesh.h"
 #include <vector>
 #include <string>
 
@@ -35,7 +37,7 @@ int main(int argc, char* argv[])
     int screenWidth = 1280;
     int screenHeight = 720;
 
-    InitWindow(screenWidth, screenHeight, "Dijkstra's Algorithm");
+    InitWindow(screenWidth, screenHeight, "A* Algorithm");
     SetTargetFPS(60);
 
 	NodeMap nodeMap;
@@ -43,7 +45,7 @@ int main(int argc, char* argv[])
     asciiMap.push_back("000000000000");
     asciiMap.push_back("010111011100");
     asciiMap.push_back("010101110110");
-    asciiMap.push_back("010100000000");
+    asciiMap.push_back("010100000010");
     asciiMap.push_back("010111111110");
     asciiMap.push_back("010000001000");
     asciiMap.push_back("011111111110");
@@ -52,12 +54,39 @@ int main(int argc, char* argv[])
 
 	Node* start = nodeMap.GetNode(1, 1);
 	Node* end = nodeMap.GetNode(10, 2);
-	std::vector<Node*> path = DijkstrasSearch(start, end);
+	std::vector<Node*> path = AStarSearch(start, end);
 	Color lineColor = { 0, 255, 0, 255 }; // bright green
 
-	PathAgent agent;
-	agent.SetNode(start);
-	agent.SetSpeed(300.0f);
+	Agent agent(&nodeMap, new GotoPointBehaviour());
+    agent.SetNode(start);
+
+	Agent agent2(&nodeMap, new WanderBehaviour());
+	agent2.SetNode(nodeMap.GetRandomNode());
+
+    // set up a FSM, we're going to have two states with their own conditions
+    DistanceCondition* closerThan5 = new DistanceCondition(5.0f * nodeMap.GetCellSize(), true);
+    DistanceCondition* furtherThan7 = new DistanceCondition(7.0f * nodeMap.GetCellSize(), false);
+
+    // register these states with the FSM, so its responsible for deleting them now
+    State* wanderState = new State(new WanderBehaviour());
+    State* followState = new State(new FollowBehaviour());
+    wanderState->AddTransition(closerThan5, followState);
+    followState->AddTransition(furtherThan7, wanderState);
+
+    // make a finite state machine that starts off wandering
+    FiniteStateMachine* fsm = new FiniteStateMachine(wanderState);
+    fsm->AddState(wanderState);
+    fsm->AddState(followState);
+
+    Agent agent3(&nodeMap, fsm);
+    agent3.SetNode(nodeMap.GetRandomNode());
+    agent3.SetTarget(&agent);
+    agent3.SetSpeed(32);
+
+	/*Agent agent3(&nodeMap, new SelectorBehaviour(new FollowBehaviour(), new WanderBehaviour()));
+	agent3.SetNode(nodeMap.GetRandomNode());
+	agent3.SetTarget(&agent);
+    agent3.SetSpeed(32);*/
 
     NavMesh navigation(screenWidth, screenHeight);
     srand(42);
@@ -74,34 +103,28 @@ int main(int argc, char* argv[])
 		deltaTime = fTime - time;
 		time = fTime;
 
-        // click on node map to set a new target node and recalculate the path
-        /*if (IsMouseButtonPressed(0)) {
-            Vector2 mousePos = GetMousePosition();
-            Node* pathEnd = nodeMap.GetClosestNode(glm::vec2(mousePos.x, mousePos.y));
-            if (pathEnd != nullptr) {
-                agent.GoToNode(pathEnd);
-            }
-        }
-
-        agent.Update(deltaTime);*/ // update the agent's position along the path
-
         BeginDrawing();
-		ClearBackground(BLACK); // black background
+		ClearBackground(BLACK);
 
-        navigation.Draw();
+        nodeMap.Draw(true);
+		nodeMap.DrawPath(agent.GetPath(), lineColor);
 
-        /*nodeMap.Draw(true); // draw the node map
-		std::vector<Node*> path;
-		agent.GetPath(path);
-		nodeMap.DrawPath(path, lineColor); // draw the path
+        //navigation.Draw();
 
-		agent.Draw();*/ // draw the agent
+		agent.Update(deltaTime);
+		agent.Draw(); // draw the agent
+
+		agent2.Update(deltaTime);
+		agent2.Draw(); // draw the wandering agent
+
+		agent3.Update(deltaTime);
+		agent3.Draw(); // draw the following agent
 
         EndDrawing();
     }
 
     // De-Initialization
-    //--------------------------------------------------------------------------------------   
+    //--------------------------------------------------------------------------------------
     CloseWindow();
 
     return 0;

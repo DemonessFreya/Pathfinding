@@ -1,6 +1,7 @@
 #include "Agent.h"
 #include "NavMesh.h"
 #include "FSM.h"
+#include "UtilityAI.h"
 #include <iostream>
 #include <algorithm>
 
@@ -405,6 +406,15 @@ namespace AIForGames
     }
 
 	// ------------- End of Finite State Machine -------------
+
+
+	// ------------- UtilityAI Functions -------------
+    UtilityAI::~UtilityAI() {
+        for (Behaviour* b : m_behaviours)
+            delete b;
+	}
+
+	// ------------- End of UtilityAI Functions -------------
 
 
     // ------------- A* Search Algorithm -------------

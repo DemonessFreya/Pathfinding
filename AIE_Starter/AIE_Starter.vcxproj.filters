@@ -92,5 +92,8 @@
     <ClInclude Include="FSM.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="UtilityAI.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

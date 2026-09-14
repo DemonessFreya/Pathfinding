@@ -64,8 +64,8 @@ int main(int argc, char* argv[])
 	agent2.SetNode(nodeMap.GetRandomNode());
 
     // set up a FSM, we're going to have two states with their own conditions
-    DistanceCondition* closerThan5 = new DistanceCondition(5.0f * nodeMap.GetCellSize(), true);
-    DistanceCondition* furtherThan7 = new DistanceCondition(7.0f * nodeMap.GetCellSize(), false);
+    DistanceCondition* closerThan5 = new DistanceCondition(3.0f * nodeMap.GetCellSize(), true);
+    DistanceCondition* furtherThan7 = new DistanceCondition(5.0f * nodeMap.GetCellSize(), false);
 
     // register these states with the FSM, so its responsible for deleting them now
     State* wanderState = new State(new WanderBehaviour());
@@ -82,11 +82,6 @@ int main(int argc, char* argv[])
     agent3.SetNode(nodeMap.GetRandomNode());
     agent3.SetTarget(&agent);
     agent3.SetSpeed(32);
-
-	/*Agent agent3(&nodeMap, new SelectorBehaviour(new FollowBehaviour(), new WanderBehaviour()));
-	agent3.SetNode(nodeMap.GetRandomNode());
-	agent3.SetTarget(&agent);
-    agent3.SetSpeed(32);*/
 
     NavMesh navigation(screenWidth, screenHeight);
     srand(42);

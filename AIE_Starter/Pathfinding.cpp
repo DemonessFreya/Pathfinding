@@ -167,6 +167,7 @@ namespace AIForGames
         }
         else {
 			// otherwise we have overshot the current target node
+			m_currentNode = m_path[m_currentIndex];
             m_currentIndex++;
 
             if (m_currentIndex >= m_path.size()) {
@@ -221,11 +222,9 @@ namespace AIForGames
         Node* end = m_nodeMap->GetClosestNode(point);
 
         // if the agent has no current node, find the closest one based on its current position 
-        if (m_pathAgent.GetNode() == nullptr) {
-            Node* startNode = m_nodeMap->GetClosestNode(m_pathAgent.GetPosition());
-            if (startNode != nullptr) {
-                m_pathAgent.SetNode(startNode);
-            }
+        Node* startNode = m_nodeMap->GetClosestNode(m_pathAgent.GetPosition());
+        if (startNode != nullptr) {
+            m_pathAgent.SetNode(startNode);
         }
 
         m_pathAgent.GoToNode(end);

@@ -28,8 +28,8 @@ namespace AIForGames {
 		State() : m_behaviours({}), m_transitions({}) {}
 		State(Behaviour* behaviour);
 		~State();
-		virtual void Update(Agent* agent, float deltaTime);
 		virtual void Enter(Agent* agent);
+		virtual void Update(Agent* agent, float deltaTime);
 		virtual void Exit(Agent* agent);
 
 		void AddTransition(Condition* condition, State* targetState);
@@ -49,8 +49,8 @@ namespace AIForGames {
 		FiniteStateMachine(State* s) : m_currentState(s), m_newState(nullptr) {}
 		virtual ~FiniteStateMachine();
 
-		void Update(Agent* agent, float deltaTime);
 		virtual void Enter(Agent* agent) override;
+		void Update(Agent* agent, float deltaTime);
 		virtual void Exit(Agent* agent) override;
 		void AddState(State* state);
 	};

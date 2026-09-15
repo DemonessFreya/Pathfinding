@@ -9,9 +9,12 @@ namespace AIForGames
     {
     public:
         virtual ~Behaviour() {}
+        virtual void Enter(Agent* agent) {}
         virtual void Update(Agent* agent, float deltaTime) = 0;
-		virtual void Enter(Agent* agent) {}
 		virtual void Exit(Agent* agent) {}
+
+		// used by UtilityAI to determine which behaviour to do
+		virtual float Evaluate(Agent* agent) { return 0.0f; }
     };
 
     class GotoPointBehaviour : public Behaviour
@@ -23,16 +26,20 @@ namespace AIForGames
     class WanderBehaviour : public Behaviour
     {
     public:
-		virtual void Update(Agent* agent, float deltaTime);
 		virtual void Enter(Agent* agent) override;
+		virtual void Update(Agent* agent, float deltaTime);
+        
+        virtual float Evaluate(Agent* agent) override;
     };
 
     class FollowBehaviour : public Behaviour
     {
     public:
 		FollowBehaviour() : lastTargetPos(0.0f, 0.0f) {}
-        virtual void Update(Agent* agent, float deltaTime);
 		virtual void Enter(Agent* agent) override;
+        virtual void Update(Agent* agent, float deltaTime);
+
+        virtual float Evaluate(Agent* agent) override;
     private:
         glm::vec2 lastTargetPos;
     };

@@ -272,6 +272,15 @@ namespace AIForGames
         agent->Reset();
     }
 
+    float WanderBehaviour::Evaluate(Agent* agent) {
+		Agent* target = agent->GetTarget();
+		float dist = glm::distance(target->GetPosition(), agent->GetPosition());
+
+		float eval = dist; // the further away the target, the higher the evaluation
+		if (eval < 0) eval = 0; // clamp to 0.0f
+		return eval;
+    }
+
     void FollowBehaviour::Update(Agent* agent, float deltaTime) {
         // check if the agent has moved significantly from its last position
         // if so we want to repath towards it
@@ -289,6 +298,15 @@ namespace AIForGames
     void FollowBehaviour::Enter(Agent* agent) {
 		agent->SetColor({ 255, 0, 0, 255 }); // set colour to red when following
 		agent->Reset();
+    }
+
+    float FollowBehaviour::Evaluate(Agent* agent) {
+		Agent* target = agent->GetTarget();
+		float dist = glm::distance(target->GetPosition(), agent->GetPosition());
+
+		float eval = 10.0f * agent->GetNodeMap()->GetCellSize() - dist; // the closer the target, the higher the evaluation
+		if (eval < 0) eval = 0; // clamp to 0.0f
+		return eval;
     }
 
     void SelectorBehaviour::SetBehaviour(Behaviour* b, Agent* agent) {
@@ -413,6 +431,30 @@ namespace AIForGames
         for (Behaviour* b : m_behaviours)
             delete b;
 	}
+
+    void UtilityAI::Update(Agent* agent, float deltaTime) {
+        float bestEval = 0;
+        Behaviour* newBehaviour = nullptr;
+        for (Behaviour* b : m_behaviours)
+        {
+            float eval = b->Evaluate(agent);
+            if (eval > bestEval)
+            {
+                bestEval = eval;
+                newBehaviour = b;
+            }
+        }
+
+        if (newBehaviour != nullptr && newBehaviour != currentBehaviour)
+        {
+            if (currentBehaviour != nullptr)
+                currentBehaviour->Exit(agent);
+            currentBehaviour = newBehaviour;
+            currentBehaviour->Enter(agent);
+        }
+
+        currentBehaviour->Update(agent, deltaTime);
+    }
 
 	// ------------- End of UtilityAI Functions -------------
 

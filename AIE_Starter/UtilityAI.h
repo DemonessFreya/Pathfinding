@@ -18,5 +18,7 @@ namespace AIForGames
 		~UtilityAI();
 
 		virtual void Update(Agent* agent, float deltaTime);
+
+		void AddBehaviour(Behaviour* behaviour) { m_behaviours.push_back(behaviour); }
 	};
 }

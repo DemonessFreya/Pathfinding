@@ -3,8 +3,101 @@
 #include "FSM.h"
 #include "UtilityAI.h"
 #include "raylib.h"
+#include "glm/glm.hpp"
 #include <iostream>
 #include <algorithm>
+
+// Helper function to replace glm::distance2 (not available in all GLM versions)
+inline float distance2(const glm::vec2& a, const glm::vec2& b) {
+    glm::vec2 d = a - b;
+    return d.x * d.x + d.y * d.y;
+}
+
+inline float triarea2(const glm::vec2& a, const glm::vec2& b, const glm::vec2& c) {
+    return (b.x - a.x) * (c.y - a.y) - (c.x - a.x) * (b.y - a.y);
+}
+
+inline bool vequal(const glm::vec2& a, const glm::vec2& b) {
+    static const float eq = 0.001f * 0.001f;
+    return distance2(a, b) < eq;
+}
+
+int stringPull(const glm::vec2* portals, int nportals, glm::vec2* pts, const int maxPts) {
+    int npts = 0;
+
+    // Init scan state
+    glm::vec2 portalApex = portals[0];
+    glm::vec2 portalLeft = portals[0];
+    glm::vec2 portalRight = portals[1];
+    int apexIndex = 0, leftIndex = 0, rightIndex = 0;
+
+    // Add start point
+    if (npts < maxPts) {
+        pts[npts++] = portalApex;
+    }
+
+    for (int i = 1; i < nportals; ++i) {
+        glm::vec2 left = portals[i * 2];
+        glm::vec2 right = portals[i * 2 + 1];
+
+        // Update right vertex
+        if (triarea2(portalApex, portalRight, right) <= 0.0f) {
+            if (vequal(portalApex, portalRight) || triarea2(portalApex, portalLeft, right) > 0.0f) {
+                // Tighten the funnel
+                portalRight = right;
+                rightIndex = i;
+            }
+            else {
+                // Right over left, insert left to path
+                if (npts < maxPts) {
+                    pts[npts++] = portalLeft;
+                }
+                portalApex = portalLeft;
+                apexIndex = leftIndex;
+                portalLeft = portalApex;
+                portalRight = portalApex;
+                leftIndex = apexIndex;
+                rightIndex = apexIndex;
+                i = apexIndex;
+                continue;
+            }
+        }
+
+        // Update left vertex
+        if (triarea2(portalApex, portalLeft, left) >= 0.0f) {
+            if (vequal(portalApex, portalLeft) || triarea2(portalApex, portalRight, left) < 0.0f) {
+                // Tighten the funnel
+                portalLeft = left;
+                leftIndex = i;
+            }
+            else {
+                // Left over right, insert right to path
+                if (npts < maxPts) {
+                    pts[npts++] = portalRight;
+                }
+                portalApex = portalRight;
+                apexIndex = rightIndex;
+                portalLeft = portalApex;
+                portalRight = portalApex;
+                leftIndex = apexIndex;
+                rightIndex = apexIndex;
+                i = apexIndex;
+                continue;
+            }
+        }
+    }
+
+    // Append last point (destination)
+    if (npts < maxPts && nportals > 0) {
+        // Ensure we don't duplicate the final point if already added
+        glm::vec2 dest = portals[(nportals - 1) * 2];
+        if (npts == 0 || !vequal(pts[npts - 1], dest)) {
+            pts[npts++] = dest;
+        }
+    }
+
+    return npts;
+}
 
 namespace AIForGames
 {
@@ -216,54 +309,80 @@ namespace AIForGames
 
 
 	// ------------- PathAgent -------------
-	PathAgent::PathAgent() : m_position(0.0f, 0.0f), m_currentIndex(0), m_nodeMap(nullptr), m_currentNode(nullptr), m_speed(100.0f) {}
+	PathAgent::PathAgent() : m_position(0.0f, 0.0f), m_currentIndex(0), m_nodeMap(nullptr), m_currentNode(0.0f, 0.0f), m_speed(100.0f) {}
 
-    void PathAgent::Update(float deltaTime) {
-        if (m_path.empty()) return;
+    void PathAgent::Update(float deltaTime)
+    {
+        if (m_smoothPath.empty()) return;
 
-        // calculate remaining distance before moving
-        float currentDistance = glm::distance(m_position, m_path[m_currentIndex]->position);
-        float stepDistance = m_speed * deltaTime;
+        // find out how far we have to go to the next node
+        glm::vec2 delta = m_currentNode - m_position;
+        float distanceToNext = glm::length(delta);
 
-        // will we reach/overshoot the node this frame?
-        if (currentDistance - stepDistance > 0.0001f) {
-            // safe to normalize because currentDistance > 0.0001f
-            glm::vec2 unitVectorToNextNode = (m_path[m_currentIndex]->position - m_position) / currentDistance;
-            m_position += unitVectorToNextNode * stepDistance;
+        // normalize the vector to the next node
+        if (distanceToNext > 0)
+            delta /= distanceToNext;
+
+        distanceToNext -= m_speed * deltaTime;
+        if (distanceToNext >= 0)
+        {
+            // we won't get to the target node this frame - so move linearly towards it
+            m_position = m_position + delta * m_speed * deltaTime;
         }
-        else {
-			// otherwise we have overshot the current target node
-			m_currentNode = m_path[m_currentIndex];
+        else
+        {
             m_currentIndex++;
-
-            if (m_currentIndex >= m_path.size()) {
-				// reached the end of the path, so snap to the last node and clear the path
-                m_position = m_path.back()->position;
-				m_currentNode = m_path.back();
+            if (m_currentIndex >= (int)m_smoothPath.size())
+            {
+                // we've reached the end, so stop on the node and clear our path
+                m_position = m_currentNode;
                 m_path.clear();
-			}
-            else {
-				// invert the overshoot distance to get a positive overshoot distance
-				float overshoot = stepDistance - currentDistance;
+                m_smoothPath.clear();
+            }
+            else
+            {
+                // move on to the next node
+                glm::vec2 oldNode = m_currentNode;
+                m_currentNode = m_smoothPath[m_currentIndex];
 
-                // start from the node we just reached
-				glm::vec2 previousNodePos = m_path[m_currentIndex - 1]->position;
-				glm::vec2 nextNodePos = m_path[m_currentIndex]->position;
+                // get the unit vector from the old node to the new one
+                delta = m_currentNode - oldNode;
+                float mag = glm::length(delta);
 
-                // direction vector for new segment
-				glm::vec2 newSegmentDirection = glm::normalize(nextNodePos - previousNodePos);
-
-				// move from previous node along the new segment direction by the overshoot distance
-                m_position = previousNodePos + (newSegmentDirection * overshoot);
+                // move along the path from the previous node to the new current node by the overshoot amount
+                if (mag > 0) {
+                    m_position = oldNode - delta * distanceToNext / mag;
+                }
+                else {
+                    m_position = m_currentNode;
+                }
             }
         }
     }
 
     void PathAgent::GoToNode(Node* node) {
-		if (node == nullptr) return; // validate the target node
-		m_path = AStarSearch(m_currentNode, node);
-		//m_path = m_nodeMap->SmoothPath(m_path); // smooth the path
-        m_currentIndex = 0; // set index to 0 if path excludes current node, or 1 if path includes current node
+        if (node == nullptr) return; // validate the target node
+
+        Node* startNode = m_nodeMap->GetClosestNode(m_position);
+        m_path = AStarSearch(startNode, node);
+        m_smoothPath = m_nodeMap->SmoothPath(m_path); // smooth the path via INavigatable interface
+
+        m_currentIndex = 0;
+        if (!m_smoothPath.empty()) {
+            m_currentNode = m_smoothPath[0];
+        }
+    }
+
+    void PathAgent::SetNode(Node* node) {
+        if (node != nullptr) {
+            m_position = node->position;
+            m_currentNode = node->position; // Extract position from Node*
+        }
+    }
+
+    void PathAgent::SetNode(glm::vec2 pos) {
+        m_position = pos;
+        m_currentNode = pos;
     }
 
     void PathAgent::Draw(Color color) {
@@ -657,6 +776,56 @@ namespace AIForGames
         return closest;
     }
 
+    std::vector<glm::vec2> NavMesh::SmoothPath(const std::vector<Node*>& path) {
+        if (path.empty())
+            return {};
+
+        std::vector<glm::vec2> smoothPath;
+        glm::vec2* portals = new glm::vec2[(path.size() + 1) * 2];
+        int index = 0;
+
+        // add start to portals
+        portals[index++] = ((NavMesh::NavMeshNode*)path.front())->position;
+        portals[index++] = ((NavMesh::NavMeshNode*)path.front())->position;
+
+        NavMesh::NavMeshNode* prev = nullptr;
+        for (auto n : path) {
+            NavMesh::NavMeshNode* node = (NavMesh::NavMeshNode*)n;
+            if (prev != nullptr) {
+                glm::vec2 adj[2];
+                prev->getAdjacentVertices(node, adj);
+                glm::vec2 fromPrev = { node->position.x - prev->position.x,
+                                       node->position.y - prev->position.y };
+                glm::vec2 toAdj0 = { adj[0].x - prev->position.x,
+                    adj[0].y - prev->position.y };
+                if ((fromPrev.x * toAdj0.y - toAdj0.x * fromPrev.y) > 0) {
+                    portals[index++] = adj[1]; // Left vertex goes first
+                    portals[index++] = adj[0]; // Right vertex goes second
+                }
+                else {
+                    portals[index++] = adj[0]; // Left vertex goes first
+                    portals[index++] = adj[1]; // Right vertex goes second
+                }
+            }
+            prev = node;
+        }
+
+        // add end to portals
+        portals[index++] = ((NavMesh::NavMeshNode*)path.back())->position;
+        portals[index++] = ((NavMesh::NavMeshNode*)path.back())->position;
+
+        // shorten path through portals
+        glm::vec2 out[100];
+        int count = stringPull(portals, index / 2, out, 100);
+
+        for (int i = 0; i < count; ++i)
+            smoothPath.push_back(out[i]);
+
+        delete[] portals;
+
+        return smoothPath;
+    }
+
     bool NavMesh::addObstacle(float x, float y, float width, float height, float padding) {
         for (auto& ob : m_obstacles) {
             if (((ob.x + ob.w + ob.padding) < x - padding ||
@@ -775,6 +944,21 @@ namespace AIForGames
                 lineColor
             );
         }
+    }
+
+    void NavMesh::DrawSmoothPath(const std::vector<glm::vec2>& smoothPath, Color lineColor) {
+        if (smoothPath.size() < 2) return;
+
+        for (size_t i = 0; i < smoothPath.size() - 1; ++i) {
+            Vector2 start = { smoothPath[i].x, smoothPath[i].y };
+            Vector2 end = { smoothPath[i + 1].x, smoothPath[i + 1].y };
+
+            DrawLineEx(start, end, 3.0f, lineColor);
+            DrawCircleV(start, 4.0f, lineColor);
+        }
+
+        Vector2 last = { smoothPath.back().x, smoothPath.back().y };
+        DrawCircleV(last, 4.0f, lineColor);
     }
 
 	// ------------- End of NavMesh -------------

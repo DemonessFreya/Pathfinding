@@ -107,6 +107,7 @@ int main(int argc, char* argv[])
 
         navigation.Draw();
 		navigation.DrawPath(agent.GetPath(), { 0, 255, 0, 255 }); // draw the path of the agent in bright green
+        navigation.DrawSmoothPath(navigation.SmoothPath(agent.GetPath()), RED);
 
 		agent.Update(deltaTime);
 		agent.Draw(); // draw the agent

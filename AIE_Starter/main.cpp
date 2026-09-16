@@ -61,30 +61,33 @@ int main(int argc, char* argv[])
     
     nodeMap.Initialise(asciiMap, 32);
 
-	Node* start = nodeMap.GetNode(1, 1);
-	Node* end = nodeMap.GetNode(23, 14);
-	std::vector<Node*> path = AStarSearch(start, end);
-	Color lineColor = { 0, 255, 0, 255 }; // bright green
+	//Node* start = nodeMap.GetNode(1, 1);
+	//Node* end = nodeMap.GetNode(23, 14);
+	//std::vector<Node*> path = AStarSearch(start, end);
+	//Color lineColor = { 0, 255, 0, 255 }; // bright green
 
-	Agent agent(&nodeMap, new GotoPointBehaviour());
+	NavMesh navigation(screenWidth, screenHeight);
+	srand(42);
+    navigation.addObstacles(12, 60, 60);
+    navigation.build();
+	Node* start = navigation.getNodes()[0];
+
+	Agent agent(&navigation, new GotoPointBehaviour());
     agent.SetNode(start);
+	agent.SetSpeed(64);
 
-	Agent agent2(&nodeMap, new WanderBehaviour());
-	agent2.SetNode(nodeMap.GetRandomNode());
+	Agent agent2(&navigation, new WanderBehaviour());
+	agent2.SetNode(navigation.GetRandomNode());
+	agent2.SetSpeed(64);
 
     UtilityAI* utilityAI = new UtilityAI();
 	utilityAI->AddBehaviour(new WanderBehaviour());
 	utilityAI->AddBehaviour(new FollowBehaviour());
 
-	Agent agent3(&nodeMap, utilityAI);
-	agent3.SetNode(nodeMap.GetRandomNode());
+	Agent agent3(&navigation, utilityAI);
+	agent3.SetNode(navigation.GetRandomNode());
 	agent3.SetTarget(&agent);
 	agent3.SetSpeed(32);
-
-    NavMesh navigation(screenWidth, screenHeight);
-    srand(42);
-    navigation.addObstacles(12, 60, 60);
-    navigation.build();
 
 	float time = (float)GetTime();
 	float deltaTime = 0.0f;
@@ -99,10 +102,12 @@ int main(int argc, char* argv[])
         BeginDrawing();
 		ClearBackground(BLACK);
 
-        nodeMap.Draw(true);
-		nodeMap.DrawPath(agent.GetPath(), lineColor);
+  //      nodeMap.Draw(true);
+		//nodeMap.DrawPath(agent.GetPath(), lineColor);
 
-        //navigation.Draw();
+        navigation.Draw();
+		navigation.DrawPath(agent.GetPath(), { 0, 255, 0, 255 }); // draw the path of the agent in bright green
+        navigation.DrawSmoothPath(navigation.SmoothPath(agent.GetPath()), RED);
 
 		agent.Update(deltaTime);
 		agent.Draw(); // draw the agent

@@ -7,12 +7,15 @@
 
 namespace AIForGames
 {
+	class INavigatable;
+
     class Agent
     {
     public:
         Agent() : m_current(nullptr), m_nodeMap(nullptr), m_target(nullptr), m_speed(0), m_color({ 255, 255, 0, 255 }) {}
-        Agent(NodeMap* _nodeMap, Behaviour* _behaviour) : m_current(_behaviour), m_nodeMap(_nodeMap), m_target(nullptr), m_speed(0), m_color({ 255, 255, 0, 255 })
+        Agent(INavigatable* _nodeMap, Behaviour* _behaviour) : m_current(_behaviour), m_nodeMap(_nodeMap), m_target(nullptr), m_color({ 255, 255, 0, 255 })
         {
+            m_pathAgent.SetSpeed(32);
 			m_pathAgent.SetNodeMap(_nodeMap);
 			if (m_current != nullptr) m_current->Enter(this);
         }
@@ -28,7 +31,7 @@ namespace AIForGames
         void SetNode(Node* node);
         std::vector<Node*> GetPath();
 
-		NodeMap* GetNodeMap() const { return m_nodeMap; }
+		INavigatable* GetNodeMap() const { return m_nodeMap; }
         glm::vec2 GetPosition() const { return m_pathAgent.GetPosition(); }
         Agent* GetTarget() const { return m_target; }
 		void SetTarget(Agent* target) { m_target = target; }
@@ -38,7 +41,7 @@ namespace AIForGames
     private:
         PathAgent m_pathAgent;
         Behaviour* m_current;
-        NodeMap* m_nodeMap;
+        INavigatable* m_nodeMap;
         Agent* m_target;
         int m_speed;
         Color m_color;

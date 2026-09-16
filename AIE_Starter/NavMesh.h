@@ -16,9 +16,10 @@ namespace AIForGames
 		// default value used to determine if we've "moved significantly" when tracking a moving target
 		virtual float GetCellSize() { return 32; }
 		virtual Node* GetRandomNode() = 0;
+		virtual std::vector<glm::vec2> SmoothPath(const std::vector<Node*>& path) = 0;
 	};
 
-	class NavMesh
+	class NavMesh : public INavigatable
 	{
 	public:
 		// create base walkable area
@@ -37,6 +38,12 @@ namespace AIForGames
 			std::vector<glm::vec2> vertices;
 		};
 
+		virtual Node* GetRandomNode() override;
+		NavMesh::NavMeshNode* findClosest(float x, float y) const;
+		virtual Node* GetClosestNode(glm::vec2 worldPos) { return findClosest(worldPos.x, worldPos.y); }
+
+		virtual std::vector<glm::vec2> SmoothPath(const std::vector<Node*>& path) override;
+
 		struct Obstacle {
 			float x, y, w, h, padding;
 		};
@@ -49,6 +56,8 @@ namespace AIForGames
 		void build();
 
 		void Draw();
+		void DrawPath(std::vector<Node*> path, Color lineColor);
+		void DrawSmoothPath(const std::vector<glm::vec2>& smoothPath, Color lineColor);
 
 		std::vector<NavMeshNode*>& getNodes() { return m_nodes; }
 		std::vector<Obstacle>& getObstacles() { return m_obstacles; }

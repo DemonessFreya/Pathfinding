@@ -43,18 +43,26 @@ int main(int argc, char* argv[])
 
 	NodeMap nodeMap;
     std::vector<std::string> asciiMap;
-    asciiMap.push_back("000000000000");
-    asciiMap.push_back("010111011100");
-    asciiMap.push_back("010101110110");
-    asciiMap.push_back("010100000010");
-    asciiMap.push_back("010111111110");
-    asciiMap.push_back("010000001000");
-    asciiMap.push_back("011111111110");
-    asciiMap.push_back("000000000000");
+    asciiMap.push_back("00000000000000000000000");
+    asciiMap.push_back("01101111111111111111110");
+    asciiMap.push_back("01101111111111111111110");
+    asciiMap.push_back("01101100000000000000010");
+    asciiMap.push_back("01101111111110111111110");
+    asciiMap.push_back("01101111111110111000000");
+    asciiMap.push_back("01101111101110111111110");
+    asciiMap.push_back("01101111101110000011110");
+    asciiMap.push_back("01101111101111111111110");
+    asciiMap.push_back("01111111100000000000010");
+    asciiMap.push_back("01110111101111111111110");
+    asciiMap.push_back("01110111101111111111110");
+    asciiMap.push_back("01110111101111111111110");
+    asciiMap.push_back("01110111111111111111110");
+    asciiMap.push_back("00000000000000000000000");
+    
     nodeMap.Initialise(asciiMap, 32);
 
 	Node* start = nodeMap.GetNode(1, 1);
-	Node* end = nodeMap.GetNode(10, 2);
+	Node* end = nodeMap.GetNode(23, 14);
 	std::vector<Node*> path = AStarSearch(start, end);
 	Color lineColor = { 0, 255, 0, 255 }; // bright green
 

@@ -7,12 +7,15 @@
 
 namespace AIForGames
 {
+	class NodeMap;
+
     class PathAgent
     {
     private:
         glm::vec2 m_position;
         std::vector<Node*> m_path;
         int m_currentIndex;
+		NodeMap* m_nodeMap;
         Node* m_currentNode;
         float m_speed;
 
@@ -24,7 +27,8 @@ namespace AIForGames
 		void SetNode(Node* node) { m_currentNode = node; if (node != nullptr) m_position = node->position; }
 		Node* GetNode() const { return m_currentNode; }
 		void SetSpeed(float speed) { m_speed = speed; }
-		void GetPath(std::vector<Node*>& path) { path = m_path; }
+		std::vector<Node*> GetPath() const { return m_path; }
         glm::vec2 GetPosition() const { return m_position; }
+		void SetNodeMap(NodeMap* nodeMap) { m_nodeMap = nodeMap; }
     };
 }

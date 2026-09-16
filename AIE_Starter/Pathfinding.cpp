@@ -2,6 +2,7 @@
 #include "NavMesh.h"
 #include "FSM.h"
 #include "UtilityAI.h"
+#include "raylib.h"
 #include <iostream>
 #include <algorithm>
 
@@ -35,7 +36,7 @@ namespace AIForGames
         m_height = static_cast<int>(asciiMap.size());
         m_width = static_cast<int>(asciiMap[0].size());
 
-        m_nodes = new Node * [m_width * m_height];
+        m_nodes = new Node * [static_cast<size_t>(m_width) * m_height];
 
         // loop over the strings, creating Node entries as we go
         for (int y = 0; y < m_height; y++) {
@@ -71,6 +72,19 @@ namespace AIForGames
                         node->ConnectTo(nodeSouth, 1); // TODO: weights
                         nodeSouth->ConnectTo(node, 1);
 					}
+
+                    // diagonals - look to (-1, -1)
+					Node* nodeSouthWest = (x == 0 || y == 0) ? nullptr : GetNode(x - 1, y - 1);
+                    if (nodeSouthWest) {
+						node->ConnectTo(nodeSouthWest, 1.414f); // TODO: weights
+						nodeSouthWest->ConnectTo(node, 1.414f);
+                    }
+					// and (+1, -1)
+					Node* nodeSouthEast = (x == m_width - 1 || y == 0) ? nullptr : GetNode(x + 1, y - 1);
+                    if (nodeSouthEast) {
+                        node->ConnectTo(nodeSouthEast, 1.414f);
+						nodeSouthEast->ConnectTo(node, 1.414f);
+                    }
                 }
             }
         }
@@ -118,6 +132,57 @@ namespace AIForGames
         }
 	}
 
+    std::vector<Node*> NodeMap::SmoothPath(std::vector<Node*> path) {
+        if (path.size() < 3) return path; // if the path is empty, or only has one or two nodes, there's nothing to smooth
+
+        std::vector<Node*> smoothedPath;
+		int startIndex = 0;
+        smoothedPath.push_back(path[0]); // always include the first node
+
+        while (startIndex < static_cast<int>(path.size()) - 1) {
+            int lastVisibleIndex = startIndex + 1;
+
+            // keep stepping forwards along the path to find the furthest node we can see
+            for (int i = startIndex + 2; i < static_cast<int>(path.size()); i++) {
+                if (IsVisibleFrom(path[startIndex], path[i])) {
+                    lastVisibleIndex = i; // update the last visible index if we can see this node
+                }
+                else {
+                    break; // stop checking further nodes if we can't see this one
+                }
+			}
+
+            // add the last visible node to the smoothed path
+            smoothedPath.push_back(path[lastVisibleIndex]);
+            startIndex = lastVisibleIndex; // move to the last visible node
+        }
+		return smoothedPath;
+    }
+
+    bool NodeMap::IsVisibleFrom(Node* start, Node* end) {
+        // calculate a vector from start to end that is one cellsize in length
+		glm::vec2 delta = end->position - start->position;
+		float distance = glm::length(delta);
+
+		if (distance < 0.0001f) return true; // if the start and end nodes are the same, then they are visible to each other
+
+        float stepSize = m_cellSize * 0.5f;
+		int steps = static_cast<int>(distance / stepSize);
+		glm::vec2 direction = delta * (1.0f / distance);
+
+		// step forward in that direction one cell at a time from start towards end
+        for (int i = 1; i <= steps; ++i) {
+			glm::vec2 testPos = start->position + direction * (stepSize * i);
+
+            if (GetClosestNode(testPos) == nullptr) {
+                // if we hit an empty square, then the end node is not visible from the start node
+                return false;
+			}
+        }
+        // we've travelled the whole path without hitting an obstacle
+        return true;
+    }
+
     Node* NodeMap::GetNode(int x, int y) {
 		if (x < 0 || x >= m_width) return nullptr;
 		if (y < 0 || y >= m_height) return nullptr;
@@ -151,7 +216,7 @@ namespace AIForGames
 
 
 	// ------------- PathAgent -------------
-	PathAgent::PathAgent() : m_position(0.0f, 0.0f), m_currentIndex(0), m_currentNode(nullptr), m_speed(100.0f) {}
+	PathAgent::PathAgent() : m_position(0.0f, 0.0f), m_currentIndex(0), m_nodeMap(nullptr), m_currentNode(nullptr), m_speed(100.0f) {}
 
     void PathAgent::Update(float deltaTime) {
         if (m_path.empty()) return;
@@ -197,6 +262,7 @@ namespace AIForGames
     void PathAgent::GoToNode(Node* node) {
 		if (node == nullptr) return; // validate the target node
 		m_path = AStarSearch(m_currentNode, node);
+		m_path = m_nodeMap->SmoothPath(m_path); // smooth the path
         m_currentIndex = 0; // set index to 0 if path excludes current node, or 1 if path includes current node
     }
 
@@ -240,9 +306,7 @@ namespace AIForGames
     }
 
     std::vector<Node*> Agent::GetPath() {
-        std::vector<Node*> path;
-        m_pathAgent.GetPath(path);
-        return path;
+        return m_pathAgent.GetPath();
 	}
 
     // ------------- End of Agent -------------

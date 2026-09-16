@@ -7,7 +7,7 @@
 
 namespace AIForGames
 {
-	class NodeMap;
+	class INavigatable;
 
     class PathAgent
     {
@@ -15,7 +15,7 @@ namespace AIForGames
         glm::vec2 m_position;
         std::vector<Node*> m_path;
         int m_currentIndex;
-		NodeMap* m_nodeMap;
+		INavigatable* m_nodeMap;
         Node* m_currentNode;
         float m_speed;
 
@@ -29,6 +29,6 @@ namespace AIForGames
 		void SetSpeed(float speed) { m_speed = speed; }
 		std::vector<Node*> GetPath() const { return m_path; }
         glm::vec2 GetPosition() const { return m_position; }
-		void SetNodeMap(NodeMap* nodeMap) { m_nodeMap = nodeMap; }
+		void SetNodeMap(INavigatable* nodeMap) { m_nodeMap = nodeMap; }
     };
 }

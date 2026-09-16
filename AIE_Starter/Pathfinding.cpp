@@ -262,7 +262,7 @@ namespace AIForGames
     void PathAgent::GoToNode(Node* node) {
 		if (node == nullptr) return; // validate the target node
 		m_path = AStarSearch(m_currentNode, node);
-		m_path = m_nodeMap->SmoothPath(m_path); // smooth the path
+		//m_path = m_nodeMap->SmoothPath(m_path); // smooth the path
         m_currentIndex = 0; // set index to 0 if path excludes current node, or 1 if path includes current node
     }
 
@@ -635,6 +635,28 @@ namespace AIForGames
         }
     }
 
+    Node* NavMesh::GetRandomNode() {
+		int index = rand() % m_nodes.size();
+		return m_nodes[index];
+	}
+
+    NavMesh::NavMeshNode* NavMesh::findClosest(float x, float y) const {
+        NavMesh::NavMeshNode* closest = nullptr;
+        float closestDist = 2000 * 2000;
+
+        for (auto node : m_nodes) {
+
+            float dist = (node->position.x - x) * (node->position.x - x) + (node->position.y - y) * (node->position.y - y);
+
+            if (dist < closestDist) {
+                closest = node;
+                closestDist = dist;
+            }
+        }
+
+        return closest;
+    }
+
     bool NavMesh::addObstacle(float x, float y, float width, float height, float padding) {
         for (auto& ob : m_obstacles) {
             if (((ob.x + ob.w + ob.padding) < x - padding ||
@@ -742,6 +764,16 @@ namespace AIForGames
         // draw obstacles
         for (auto& o : getObstacles()) {
             DrawRectangle((int)o.x, (int)o.y, (int)o.w, (int)o.h, m_obstacleColor);
+        }
+    }
+
+    void NavMesh::DrawPath(std::vector<Node*> path, Color lineColor) {
+        for (size_t i = 0; i + 1 < path.size(); ++i) {
+            DrawLine(
+                (int)path[i]->position.x, (int)path[i]->position.y,
+                (int)path[i + 1]->position.x, (int)path[i + 1]->position.y,
+                lineColor
+            );
         }
     }
 
